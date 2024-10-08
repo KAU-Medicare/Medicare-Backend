@@ -44,7 +44,7 @@ jobs:
   
 
     - name: Transfer built jar file via SCP
-      run: scp -P ${{ secrets.SERVER_PORT }} ./build/libs/*.jar ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy/kau-medicare/web/
+      run: scp -P ${{ secrets.SERVER_PORT }} ./build/libs/app.jar ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy/kau-medicare/web/app.jar
 
     - name: Execute remote commands
       uses: appleboy/ssh-action@master
