@@ -1,0 +1,265 @@
+<main//java//com//example//kaumedicare//KauMedicareApplication.java>
+```
+package com.example.kaumedicare;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class KauMedicareApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(KauMedicareApplication.class, args);
+    }
+
+}
+```
+
+<main//java//com//example//kaumedicare//configuration//SecurityConfiguration.java>
+```
+package com.example.kaumedicare.configuration;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfiguration {
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .authorizeHttpRequests(authz -> authz
+                        .requestMatchers("/api/**").permitAll()  // /api/** 경로에 대한 접근 허용
+                        .anyRequest().authenticated()
+                )
+                .csrf(AbstractHttpConfigurer::disable)  // 새로운 방식으로 CSRF 비활성화
+                .httpBasic(AbstractHttpConfigurer::disable);  // HTTP Basic 인증 비활성화
+        return http.build();
+    }
+}
+```
+
+<main//java//com//example//kaumedicare//configuration//SwaggerConfig.java>
+```
+package com.example.kaumedicare.configuration;
+
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.servers.Server;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class SwaggerConfig {
+
+    @Bean
+    public OpenAPI customOpenAPI() {
+        return new OpenAPI()
+                .addServersItem(new Server().url("/api"))
+                .components(new Components())
+                .info(apiInfo());
+    }
+
+    private Info apiInfo() {
+        return new Info()
+                .title("Kau Medicare API") // API 제목
+                .description("This API provides operations for managing todo tasks in Kau Medicare") // API 설명
+                .version("1.0.0") // API 버전
+                .contact(new Contact()
+                        .name("jisang you") // 담당자 이름
+                        .email("dbwltkd2000@gmail.com") // 담당자 이메일
+                        .url("https://kau-medicare.shop")); // 연락처 URL
+
+    }
+}
+```
+
+<main//java//com//example//kaumedicare//controller//TodoController.java>
+```
+package com.example.kaumedicare.controller;
+
+
+import com.example.kaumedicare.model.Todo;
+import com.example.kaumedicare.service.TodoService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+
+
+@RestController
+@RequestMapping("/api/todo")
+public class TodoController {
+
+    private final TodoService todoService;
+
+    public TodoController(TodoService todoService) {
+        this.todoService = todoService;
+    }
+
+    // 모든 할 일 조회
+    @GetMapping
+    public List<Todo> getAllTodos() {
+        return todoService.getAllTodos();
+    }
+
+    // 특정 할 일 조회
+    @GetMapping("/{id}")
+    public ResponseEntity<Todo> getTodoById(@PathVariable Long id) {
+        Optional<Todo> todo = todoService.getTodoById(id);
+        return todo.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // 할 일 생성
+    @PostMapping
+    public ResponseEntity<Todo> createTodo(@Validated @RequestBody Todo todo) {
+        return ResponseEntity.ok(todoService.createTodo(todo));
+    }
+
+    // 할 일 삭제
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTodoById(@PathVariable Long id) {
+        todoService.deleteTodoById(id);
+        return ResponseEntity.noContent().build();
+    }
+}```
+
+<main//java//com//example//kaumedicare//model//Todo.java>
+```
+package com.example.kaumedicare.model;
+
+
+import jakarta.persistence.*;
+import lombok.Data;
+
+@Entity
+@Data
+public class Todo {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String title;
+}
+```
+
+<main//java//com//example//kaumedicare//repository//TodoRepository.java>
+```
+package com.example.kaumedicare.repository;
+
+
+import com.example.kaumedicare.model.Todo;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface TodoRepository extends JpaRepository<Todo, Long> {
+}```
+
+<main//java//com//example//kaumedicare//service//TodoService.java>
+```
+package com.example.kaumedicare.service;
+
+
+import com.example.kaumedicare.model.Todo;
+import com.example.kaumedicare.repository.TodoRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class TodoService {
+    private final TodoRepository todoRepository;
+
+    public TodoService(TodoRepository todoRepository) {
+        this.todoRepository = todoRepository;
+    }
+
+    public List<Todo> getAllTodos() {
+        return todoRepository.findAll();
+    }
+
+    public Optional<Todo> getTodoById(Long id) {
+        return todoRepository.findById(id);
+    }
+
+    public Todo createTodo(Todo todo) {
+        return todoRepository.save(todo);
+    }
+
+    public void deleteTodoById(Long id) {
+        todoRepository.deleteById(id);
+    }
+}```
+
+<main//resources//application.properties>
+```
+spring.application.name=kau-medicare
+
+spring.datasource.url=jdbc:mysql://localhost:3306/${DB_NAME}
+spring.datasource.username=${DB_USER_NAME}
+spring.datasource.password=${DB_PASSWORD}
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+
+springdoc.swagger-ui.path="/api/swagger-ui.html"
+springdoc.api-docs.path="/api/v3/api-docs"```
+
+<test//java//com//example//kaumedicare//KauMedicareApplicationTests.java>
+```
+package com.example.kaumedicare;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+class KauMedicareApplicationTests {
+    @Test
+    void contextLoads() {
+    }
+}```
+
+<test//java//com//example//kaumedicare//TestSecurityConfig.java>
+```
+package com.example.kaumedicare;
+
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+
+@TestConfiguration
+public class TestSecurityConfig {
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+                .csrf(csrf -> csrf.disable());
+        return http.build();
+    }
+}
+```
+
+<test//resources//application-test.properties>
+```
+spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+spring.jpa.database-platform=org.hibernate.dialect.H2Dialect```
+

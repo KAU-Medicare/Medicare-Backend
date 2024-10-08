@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: kau-medicare-db
+    expose:
+      - "3306"
+    volumes:
+      - ./db/data:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      TZ: Asia/Seoul
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  app:
+    container_name: kau-medicare-app
+    image: openjdk:17
+    volumes:
+      - ./web:/root
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+        - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/${DB_NAME}
+        - SPRING_DATASOURCE_USERNAME=${DB_USER_NAME}
+        - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+    command: /bin/bash -c "/root/wait-for-it.sh db:3306 -s -t 100 -- java -jar /root/app.jar"
+    restart: unless-stopped
+
+volumes:
+  db_data:
