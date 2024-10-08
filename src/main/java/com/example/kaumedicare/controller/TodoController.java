@@ -12,9 +12,10 @@ import java.util.Optional;
 
 
 @RestController
-@RequestMapping("/api/todo")
+@RequestMapping("/api/todos")
 public class TodoController {
 
+    // git test api s붙임
     private final TodoService todoService;
 
     public TodoController(TodoService todoService) {
