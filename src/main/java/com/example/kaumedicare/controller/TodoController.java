@@ -15,7 +15,7 @@ import java.util.Optional;
 @RequestMapping("/api/todos")
 public class TodoController {
 
-    // git test api s붙임
+    // git test
     private final TodoService todoService;
 
     public TodoController(TodoService todoService) {
