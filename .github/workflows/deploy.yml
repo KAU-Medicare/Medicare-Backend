@@ -33,7 +33,7 @@ jobs:
         ./gradlew build -x test
 
     - name: Setup SSH
-      uses: webfactory/ssh-agent@v0.5.4
+      uses: webfactory/ssh-agent@v0.9.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
     
@@ -44,7 +44,7 @@ jobs:
   
 
     - name: Transfer built jar file via SCP
-      run: scp -P ${{ secrets.SERVER_PORT }} ./build/libs/*.jar ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy/kau-medicare/web/app.jar
+      run: scp -P ${{ secrets.SERVER_PORT }} ./build/libs/*.jar ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/deploy/kau-medicare/web/app.jar
 
     - name: Execute remote commands
       uses: appleboy/ssh-action@master
