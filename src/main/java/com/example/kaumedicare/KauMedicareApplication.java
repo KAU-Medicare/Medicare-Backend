@@ -20,12 +20,12 @@ public class KauMedicareApplication {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
                         .allowedOrigins(
-                                "https://localhost:8080",// 로컬 Vue.js 개발 서버
-                                "https://172.17.152.188:8080",
-                                "https://172.30.1.24:8080",     // 팀원의 로컬 환경
+                                "http://localhost:8080",// 로컬 Vue.js 개발 서버
+                                "http://172.17.152.188:8080",
+                                "http://172.30.1.24:8080",     // 팀원의 로컬 환경
                                 "https://kau-medicare.shop"    // 프로덕션 환경
                         )
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedMethods("*")
                         .allowedHeaders("*")
                         .allowCredentials(true);
             }
