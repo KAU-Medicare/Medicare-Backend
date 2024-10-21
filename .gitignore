@@ -170,6 +170,7 @@ yarn-error.log
 # add
 .env
 .properties
+
 .gradle/
 build/
 
