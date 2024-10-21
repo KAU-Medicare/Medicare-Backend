@@ -41,7 +41,7 @@ public class LoginService {
             sb.append("&client_id=4f760704cb93b148b3f6956612585605");
 
             // 2번 파라미터 redirect_uri
-            sb.append("&redirect_uri=http://localhost:8182/kakaojoin");
+            sb.append("&redirect_uri=https://kau-medicare.shop/kakaojoin");
 
             // 3번 파라미터 code
             sb.append("&code=" + code);
