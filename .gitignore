@@ -170,10 +170,37 @@ yarn-error.log
 # add
 .env
 .properties
+out.txt
+printer.sh
 
+# Gradle specific files
 .gradle/
 build/
+gradle-app.setting
+.gradletasknamecache
 
-!gradle/wrapper/gradle-wrapper.jar
+# Gradle wrapper jar should not be ignored
+!gradle-wrapper.jar
+
+# Specific Gradle files from the image
+buildOutputCleanup.lock
+executionHistory.bin
+executionHistory.lock
+file-system.probe
+fileHashes.bin
+fileHashes.lock
+
+# Compilation related
+previous-compilation-data.bin
+
+# Ignore all .bin files in .gradle directory
+**/.gradle/**/*.bin
+
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~.nib
 
 # End of https://www.toptal.com/developers/gitignore/api/java,intellij+all,vue,vuejs,macos
