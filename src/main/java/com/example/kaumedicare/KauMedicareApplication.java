@@ -26,7 +26,7 @@ public class KauMedicareApplication {
                                 "https://kau-medicare.shop"    // 프로덕션 환경
                         )
                         .allowedMethods("*")
-                        .allowedHeaders("*")
+                        .allowedHeaders("Content-Type", "Authorization")
                         .allowCredentials(true);
             }
         };
