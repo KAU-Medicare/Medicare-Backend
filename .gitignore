@@ -170,6 +170,8 @@ yarn-error.log
 # add
 .env
 .properties
+.gradle/
+build/
 
 !gradle/wrapper/gradle-wrapper.jar
 
