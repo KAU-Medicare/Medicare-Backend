@@ -144,11 +144,11 @@ public class LoginService {
 
             // json 파싱하여 id 가져오기
 
-            // 결과json 안에 properties key는 json Object를 value로 가짐
+            // 결과 json 안에 properties key는 json Object를 value로 가짐
             HashMap<String, Object> properties = (HashMap<String, Object>) resultMap.get("properties");
             String nickname = (String) properties.get("nickname");
 
-            // 결과json 안에 kakao_account key는 json Object를 value로 가짐
+            // 결과 json 안에 kakao_account key는 json Object를 value로 가짐
             HashMap<String, Object> kakao_account = (HashMap<String, Object>) resultMap.get("kakao_account");
             email = (String) kakao_account.get("email");
 
