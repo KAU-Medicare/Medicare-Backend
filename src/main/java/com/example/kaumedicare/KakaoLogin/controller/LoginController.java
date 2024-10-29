@@ -1,4 +1,4 @@
-package com.example.kaumedicare.KakaoLogin.controller;
+package com.example.kaumedicare.kakaoLogin.controller;
 
 import com.example.kaumedicare.KakaoLogin.service.LoginService;
 import org.springframework.beans.factory.annotation.Autowired;
