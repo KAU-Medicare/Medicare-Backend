@@ -155,6 +155,7 @@ public class LoginService {
 
             log.info("resultMap= {}", resultMap);
             log.info("properties= {}", properties);
+
         }
         catch (IOException e) {
             e.printStackTrace();
