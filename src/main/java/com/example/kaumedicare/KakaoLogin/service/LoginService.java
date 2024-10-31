@@ -32,24 +32,24 @@ public class LoginService {
 
             // 파라미터 세팅
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(conn.getOutputStream()));
+            StringBuilder sb = new StringBuilder();
 
             // 0번 파라미터 grant_type. -> authorization_code로 고정
+            sb.append("grant_type=authorization_code");
 
-            String sb = "grant_type=authorization_code" +
+            // 1번 파라미터 client_id -> REST API
+            sb.append("&client_id=4f760704cb93b148b3f6956612585605");
 
-                    // 1번 파라미터 client_id -> REST API
-                    "&client_id=4f760704cb93b148b3f6956612585605" +
+            // 2번 파라미터 redirect_uri
+            sb.append("&redirect_uri=https://kau-medicare.shop/kakaojoin");
 
-                    // 2번 파라미터 redirect_uri
-                    "&redirect_uri=https://kau-medicare.shop/kakaojoin" +
+            // 3번 파라미터 code
+            sb.append("&code=" + code);
 
-                    // 3번 파라미터 code
-                    "&code=" + code +
+            //Secret Key
+            sb.append("&client_secret=lv1fH0MoBM2Qu9heVsiuwZm9Cro8CDAQ");
 
-                    //Secret Key
-                    "&client_secret=lv1fH0MoBM2Qu9heVsiuwZm9Cro8CDAQ";
-
-            bw.write(sb);
+            bw.write(sb.toString());
             bw.flush();// 실제 요청을 보내는 부분
 
             // 실제 요청을 보내는 부분, 결과 코드가 200이라면 성공
@@ -86,7 +86,8 @@ public class LoginService {
             br.close();
             bw.close();
 
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
         log.info("카카오토큰생성완료>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
@@ -96,7 +97,6 @@ public class LoginService {
     // 유저 정보 얻기
     public HashMap<String, String> requestUser(String accessToken) {
 
-        String email = "";
         log.info("유저정보 요청 시작");
         String strUrl = "https://kapi.kakao.com/v2/user/me"; // request를 보낼 주소
         HashMap userInfo = new HashMap<>();
@@ -135,7 +135,7 @@ public class LoginService {
 
             // 결과 json을 HashMap 형태로 변환하여 resultMap에 담음
             HashMap<String, Object> resultMap = mapper.readValue(result, HashMap.class);
-            String id = String.valueOf(resultMap.get("id"));
+            String id = String.valueOf((Long) resultMap.get("id"));
 
             System.out.println(id);
 
@@ -149,16 +149,14 @@ public class LoginService {
 
             // 결과 json 안에 kakao_account key는 json Object를 value로 가짐
             HashMap<String, Object> kakao_account = (HashMap<String, Object>) resultMap.get("kakao_account");
-            email = (String) kakao_account.get("email");
 
-            userInfo.put("email", email);
             userInfo.put("id", id);
             userInfo.put("nickname", nickname);
 
             log.info("resultMap= {}", resultMap);
             log.info("properties= {}", properties);
-
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
         return userInfo;

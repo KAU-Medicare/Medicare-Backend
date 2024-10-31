@@ -18,15 +18,10 @@ public class LoginController {
     @GetMapping("/api/kakaologin/{code}")
     public HashMap<String, String> kakaoLogin(@PathVariable("code") String code) {
 
-        System.out.println(code);
-
         // 토큰을 요청하여 얻음
         String kakaoToken = loginService.requestToken(code);
-        System.out.println("카카오토큰" + kakaoToken);
 
         // 사용자 정보를 요청하여 얻음
-        HashMap<String, String> userInfo = loginService.requestUser(kakaoToken);
-        System.out.println("userInfo : " + userInfo);
-        return userInfo;
+        return loginService.requestUser(kakaoToken);
     }
 }
