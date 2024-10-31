@@ -1,6 +1,6 @@
-package com.example.kaumedicare.kakaoLogin.service;
+package com.example.kaumedicare.KakaoLogin.service;
 
-import com.example.kaumedicare.kakaoLogin.model.KakaoToken;
+import com.example.kaumedicare.KakaoLogin.model.KakaoToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

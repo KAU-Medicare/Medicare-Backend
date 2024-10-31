@@ -1,6 +1,6 @@
-package com.example.kaumedicare.kakaoLogin.controller;
+package com.example.kaumedicare.KakaoLogin.controller;
 
-import com.example.kaumedicare.kakaoLogin.service.LoginService;
+import com.example.kaumedicare.KakaoLogin.service.LoginService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

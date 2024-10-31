@@ -1,4 +1,4 @@
-package com.example.kaumedicare.kakaoLogin.model;
+package com.example.kaumedicare.KakaoLogin.model;
 
 import lombok.Getter;
 import lombok.Setter;
