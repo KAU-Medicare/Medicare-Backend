@@ -8,6 +8,7 @@ import com.example.kaumedicare.User.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,20 +21,23 @@ public class UserService {
     @Transactional
     public UserResponseDto loginWithKakao(UserSaveRequestDto requestDto) {
         // 카카오 ID로 기존 사용자 조회
-        User user = userRepository.findById(requestDto.getKakaoId())
-                .orElse(null);
+        return userRepository.findById(requestDto.getKakaoId())
+                .map(user -> {
+                    // 기존 사용자인 경우 로그인 처리
+                    user.login();
+                    return UserResponseDto.from(user);
+                })
+                // 신규 사용자라면 회원가입 및 로그인 처리
+                .orElseGet(() -> registerNewUser(requestDto));
+    }
 
-        if (user != null) {
-            // 기존 사용자인 경우 닉네임 업데이트 및 로그인 처리
-            user.login();
-            return UserResponseDto.from(user);
-        } else {
-            // 신규 사용자인 경우 회원가입 및 로그인 처리
-            User newUser = requestDto.toEntity();
-            newUser.login();
-            User savedUser = userRepository.save(newUser);
-            return UserResponseDto.from(savedUser);
-        }
+    // 신규 회원 등록 메서드
+    private UserResponseDto registerNewUser(UserSaveRequestDto requestDto) {
+        // User 엔티티 생성 및 초기화
+        User newUser = requestDto.toEntity();
+        newUser.login(); // 로그인 상태로 설정
+        User savedUser = userRepository.save(newUser); // DB에 저장
+        return UserResponseDto.from(savedUser); // DTO로 변환하여 반환
     }
 
     // 닉네임 변경
@@ -41,12 +45,17 @@ public class UserService {
     public UserResponseDto updateNickname(String kakaoId, String newNickname) {
         // 닉네임 유효성 검사
         if (newNickname == null || newNickname.trim().isEmpty()) {
-            throw new UserException("닉네임은 비어있을 수 없습니다.");
+            throw new UserException("닉네임은 비어 있을 수 없습니다.");
         }
         if (newNickname.length() > 20) {
             throw new UserException("닉네임은 20자를 초과할 수 없습니다.");
         }
+        // 중복된 닉네임 여부 확인
+        if (userRepository.findByNickname(newNickname).isPresent()) {
+            throw new UserException("이미 사용 중인 닉네임입니다.");
+        }
 
+        // 사용자 조회, 없으면 예외 발생
         User user = userRepository.findById(kakaoId)
                 .orElseThrow(() -> new UserException("사용자를 찾을 수 없습니다."));
 
@@ -55,8 +64,9 @@ public class UserService {
             throw new UserException("현재 닉네임과 동일합니다.");
         }
 
+        // 닉네임 업데이트
         user.updateNickname(newNickname);
-        return UserResponseDto.from(user);
+        return UserResponseDto.from(user); // 업데이트된 사용자 정보 반환
     }
 
     // 로그아웃 처리 메서드 (트랜잭션 처리)
@@ -65,9 +75,9 @@ public class UserService {
         // 카카오 ID로 사용자 조회, 없으면 예외 발생
         User user = userRepository.findById(kakaoId)
                 .orElseThrow(() -> new UserException("사용자를 찾을 수 없습니다."));
-        // 로그아웃 처리 및 저장
+        // 로그아웃 처리
         user.logout();
-        userRepository.save(user);
+        // userRepository.save(user); 생략 가능 (변경 감지 기능으로 자동 업데이트)
     }
 
     // 기존 회원 여부 확인 메서드 (읽기 전용 트랜잭션)
