@@ -1,16 +1,13 @@
 package com.example.kaumedicare.User.controller;
 
-import com.example.kaumedicare.KakaoLogin.service.LoginService;
+import com.example.kaumedicare.Exception.UserException;
 import com.example.kaumedicare.User.dto.UpdateNicknameRequest;
 import com.example.kaumedicare.User.dto.UserResponseDto;
-import com.example.kaumedicare.User.dto.UserSaveRequestDto;
-import com.example.kaumedicare.Exception.UserException;
 import com.example.kaumedicare.User.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 
 @RestController
@@ -18,27 +15,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
-    private final LoginService loginService;
-
-    // 카카오 로그인
-    @PostMapping("/kakao/{code}")
-    public ResponseEntity<UserResponseDto> kakaoLogin(@PathVariable String code) {
-        try {
-            String kakaoToken = loginService.requestToken(code);
-            HashMap<String, String> userInfo = loginService.requestUser(kakaoToken);
-
-            UserSaveRequestDto requestDto = UserSaveRequestDto.builder()
-                    .kakaoId(userInfo.get("id"))
-                    .nickname(userInfo.get("nickname"))
-                    .build();
-
-            UserResponseDto responseDto = userService.loginWithKakao(requestDto);
-            return ResponseEntity.ok(responseDto);
-
-        } catch (Exception e) {
-            throw new UserException("카카오 로그인 처리 중 오류가 발생했습니다: " + e.getMessage());
-        }
-    }
 
     // 닉네임 변경
     @PutMapping("/{kakaoId}/nickname")
