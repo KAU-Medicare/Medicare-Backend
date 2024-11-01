@@ -1,6 +1,7 @@
 package com.example.kaumedicare.User.dto;
 
 import com.example.kaumedicare.User.model.User;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,7 +17,11 @@ public class UserResponseDto {
     private String kakaoId;
     private String nickname;
     private boolean isLoggedIn;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime lastLoginAt;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
 
     public static UserResponseDto from(User user) {
