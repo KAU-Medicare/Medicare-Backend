@@ -8,8 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
@@ -40,21 +38,9 @@ public class UserController {
         }
     }
 
-    // 회원 존재 여부 확인
-    @GetMapping("/check/{kakaoId}")
-    public ResponseEntity<Boolean> checkExistingUser(@PathVariable String kakaoId) {
-        return ResponseEntity.ok(userService.isExistingUser(kakaoId));
-    }
-
     // 회원 정보 조회
     @GetMapping("/{kakaoId}")
     public ResponseEntity<UserResponseDto> findById(@PathVariable String kakaoId) {
         return ResponseEntity.ok(userService.findById(kakaoId));
-    }
-
-    // 전체 회원 조회
-    @GetMapping
-    public ResponseEntity<List<UserResponseDto>> findAll() {
-        return ResponseEntity.ok(userService.findAllMembers());
     }
 }
