@@ -1,12 +1,11 @@
 package com.example.kaumedicare.KakaoLogin.controller;
 
+import com.example.kaumedicare.Exception.UserException;
 import com.example.kaumedicare.KakaoLogin.service.LoginService;
 import com.example.kaumedicare.User.dto.UserResponseDto;
 import com.example.kaumedicare.User.dto.UserSaveRequestDto;
-import com.example.kaumedicare.Exception.UserException;
 import com.example.kaumedicare.User.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,7 +19,7 @@ public class LoginController {
     private final UserService userService;    // UserService 추가
 
     @GetMapping("/api/kakaologin/{code}")
-    public ResponseEntity<UserResponseDto> kakaoLogin(@PathVariable("code") String code) {
+    public HashMap<String, String> kakaoLogin(@PathVariable("code") String code) {
         try {
             // 1. 카카오 액세스 토큰 받기
             String kakaoToken = loginService.requestToken(code);
@@ -37,8 +36,15 @@ public class LoginController {
             // 4. UserService의 loginWithKakao 메서드 호출
             UserResponseDto responseDto = userService.loginWithKakao(requestDto);
 
-            return ResponseEntity.ok(responseDto);
+            // UserResponseDto를 HashMap으로 변환
+            HashMap<String, String> response = new HashMap<>();
+            response.put("id", responseDto.getKakaoId());
+            response.put("nickname", responseDto.getNickname());
+            response.put("isLoggedIn", String.valueOf(responseDto.isLoggedIn()));
+            response.put("lastLoginAt", responseDto.getLastLoginAt().toString());
+            response.put("createdAt", responseDto.getCreatedAt().toString());
 
+            return response;
         } catch (Exception e) {
             throw new UserException("카카오 로그인 처리 중 오류가 발생했습니다: " + e.getMessage());
         }

@@ -3,6 +3,7 @@ package com.example.kaumedicare.KakaoLogin.service;
 import com.example.kaumedicare.KakaoLogin.model.KakaoToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
@@ -13,6 +14,15 @@ import java.util.HashMap;
 @Slf4j
 @Component
 public class LoginService {
+
+    @Value("${kakao.client.id}")
+    private String clientId;
+
+    @Value("${kakao.client.secret}")
+    private String clientSecret;
+
+    @Value("${kakao.redirect.uri}")
+    private String redirectUri;
 
     // 인증코드로 token요청하기
     public String requestToken(String code) {
@@ -38,16 +48,16 @@ public class LoginService {
             sb.append("grant_type=authorization_code");
 
             // 1번 파라미터 client_id -> REST API
-            sb.append("&client_id=4f760704cb93b148b3f6956612585605");
+            sb.append("&client_id=").append(clientId);
 
             // 2번 파라미터 redirect_uri
-            sb.append("&redirect_uri=https://kau-medicare.shop/kakaojoin");
+            sb.append("&redirect_uri=").append(redirectUri);
 
             // 3번 파라미터 code
-            sb.append("&code=" + code);
+            sb.append("&code=").append(code);
 
             //Secret Key
-            sb.append("&client_secret=lv1fH0MoBM2Qu9heVsiuwZm9Cro8CDAQ");
+            sb.append("&client_secret=").append(clientSecret);
 
             bw.write(sb.toString());
             bw.flush();// 실제 요청을 보내는 부분
