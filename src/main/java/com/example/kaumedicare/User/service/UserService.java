@@ -77,7 +77,6 @@ public class UserService {
                 .orElseThrow(() -> new UserException("사용자를 찾을 수 없습니다."));
         // 로그아웃 처리
         user.logout();
-        // userRepository.save(user); 생략 가능 (변경 감지 기능으로 자동 업데이트)
     }
 
     // 기존 회원 여부 확인 메서드 (읽기 전용 트랜잭션)

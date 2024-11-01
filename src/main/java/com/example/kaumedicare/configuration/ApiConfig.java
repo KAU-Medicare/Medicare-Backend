@@ -1,6 +1,5 @@
 package com.example.kaumedicare.configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -35,8 +34,8 @@ public class ApiConfig {
         return restTemplate;
     }
 
+    /*
     @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
+    public ObjectMapper objectMapper() { return new ObjectMapper(); }
+     */
 }
