@@ -3,6 +3,7 @@ package com.example.kaumedicare.Medicine.service;
 import com.example.kaumedicare.Medicine.model.Medicine;
 import com.example.kaumedicare.Medicine.repository.MedicineRepository;
 import com.example.kaumedicare.OpenAPI.service.MedicineApiService;
+import com.example.kaumedicare.OpenAPI.service.MedicineDurApiService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,15 +19,39 @@ public class MedicineService {
 
     private final MedicineRepository medicineRepository;
     private final MedicineApiService medicineApiService;
+    private final MedicineDurApiService medicineDurApiService;
 
     @Transactional
-    public void fetchAndSaveMedicines() {
+    public void fetchAndSaveMainMedicines() {
         try {
             medicineApiService.fetchAndSaveAllMedicines(medicineRepository);
-            log.info("Medicine data fetch and save completed");
+            log.info("Main medicine data fetch and save completed");
         } catch (Exception e) {
-            log.error("Error during medicine fetch and save: ", e);
-            throw new RuntimeException("의약품 데이터 저장 중 오류가 발생했습니다.", e);
+            log.error("Error during main medicine fetch and save: ", e);
+            throw new RuntimeException("기본 의약품 데이터 저장 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    @Transactional
+    public void fetchAndSaveDurMedicines() {
+        try {
+            medicineDurApiService.fetchAndSaveAllDurMedicines(medicineRepository);
+            log.info("DUR medicine data fetch and save completed");
+        } catch (Exception e) {
+            log.error("Error during DUR medicine fetch and save: ", e);
+            throw new RuntimeException("DUR 의약품 데이터 저장 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    @Transactional
+    public void fetchAndSaveAllMedicines() {
+        try {
+            fetchAndSaveMainMedicines();
+            fetchAndSaveDurMedicines();
+            log.info("All medicine data fetch and save completed");
+        } catch (Exception e) {
+            log.error("Error during all medicine fetch and save: ", e);
+            throw new RuntimeException("전체 의약품 데이터 저장 중 오류가 발생했습니다.", e);
         }
     }
 

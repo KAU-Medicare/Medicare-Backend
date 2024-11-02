@@ -17,10 +17,22 @@ public class MedicineController {
 
     private final MedicineService medicineService;
 
-    @PostMapping("/fetch")
-    public ResponseEntity<String> fetchMedicines() {
-        medicineService.fetchAndSaveMedicines();
-        return ResponseEntity.ok("의약품 데이터 가져오기 완료");
+    @PostMapping("/fetch/main")
+    public ResponseEntity<String> fetchMainMedicines() {
+        medicineService.fetchAndSaveMainMedicines();
+        return ResponseEntity.ok("기본 의약품 데이터 가져오기 완료");
+    }
+
+    @PostMapping("/fetch/dur")
+    public ResponseEntity<String> fetchDurMedicines() {
+        medicineService.fetchAndSaveDurMedicines();
+        return ResponseEntity.ok("DUR 의약품 데이터 가져오기 완료");
+    }
+
+    @PostMapping("/fetch/all")
+    public ResponseEntity<String> fetchAllMedicines() {
+        medicineService.fetchAndSaveAllMedicines();
+        return ResponseEntity.ok("전체 의약품 데이터 가져오기 완료");
     }
 
     @GetMapping
@@ -40,4 +52,3 @@ public class MedicineController {
                 .orElse(ResponseEntity.notFound().build());
     }
 }
-
