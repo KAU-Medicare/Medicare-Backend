@@ -15,6 +15,7 @@ public class GlobalExceptionHandler {
 
     /**
      * UserException 처리
+     *
      * @param e UserException
      * @return 에러 응답
      */
@@ -28,6 +29,7 @@ public class GlobalExceptionHandler {
 
     /**
      * 그 외 예상치 못한 예외 처리
+     *
      * @param e Exception
      * @return 에러 응답
      */

@@ -42,24 +42,24 @@ public class LoginService {
 
             // 파라미터 세팅
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(conn.getOutputStream()));
-            StringBuilder sb = new StringBuilder();
 
             // 0번 파라미터 grant_type. -> authorization_code로 고정
-            sb.append("grant_type=authorization_code");
 
-            // 1번 파라미터 client_id -> REST API
-            sb.append("&client_id=").append(clientId);
+            String sb = "grant_type=authorization_code" +
 
-            // 2번 파라미터 redirect_uri
-            sb.append("&redirect_uri=").append(redirectUri);
+                    // 1번 파라미터 client_id -> REST API
+                    "&client_id=" + clientId +
 
-            // 3번 파라미터 code
-            sb.append("&code=").append(code);
+                    // 2번 파라미터 redirect_uri
+                    "&redirect_uri=" + redirectUri +
 
-            //Secret Key
-            sb.append("&client_secret=").append(clientSecret);
+                    // 3번 파라미터 code
+                    "&code=" + code +
 
-            bw.write(sb.toString());
+                    //Secret Key
+                    "&client_secret=" + clientSecret;
+
+            bw.write(sb);
             bw.flush();// 실제 요청을 보내는 부분
 
             // 실제 요청을 보내는 부분, 결과 코드가 200이라면 성공
@@ -96,8 +96,7 @@ public class LoginService {
             br.close();
             bw.close();
 
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
         log.info("카카오토큰생성완료>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
@@ -145,7 +144,7 @@ public class LoginService {
 
             // 결과 json을 HashMap 형태로 변환하여 resultMap에 담음
             HashMap<String, Object> resultMap = mapper.readValue(result, HashMap.class);
-            String id = String.valueOf((Long) resultMap.get("id"));
+            String id = String.valueOf(resultMap.get("id"));
 
             System.out.println(id);
 
@@ -166,8 +165,7 @@ public class LoginService {
             log.info("resultMap= {}", resultMap);
             log.info("properties= {}", properties);
 
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
         return userInfo;

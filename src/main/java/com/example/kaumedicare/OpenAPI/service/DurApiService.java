@@ -1,9 +1,9 @@
 package com.example.kaumedicare.OpenAPI.service;
 
-import com.example.kaumedicare.Medicine.model.Medicine;
-import com.example.kaumedicare.Medicine.repository.MedicineRepository;
 import com.example.kaumedicare.Dur.model.Dur;
 import com.example.kaumedicare.Dur.repository.DurRepository;
+import com.example.kaumedicare.Medicine.model.Medicine;
+import com.example.kaumedicare.Medicine.repository.MedicineRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -26,15 +26,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DurApiService {
 
-    @Value("${api.service-key}")
-    private String serviceKey;
-
-    private final MedicineRepository medicineRepository;
-    private final DurRepository durRepository;
-
     private static final String DUR_BASE_URL = "https://apis.data.go.kr/1471000/DURPrdlstInfoService03/getUsjntTabooInfoList03";
     private static final int BATCH_SIZE = 500;
     private static final int MAX_RETRIES = 100;
+    private final MedicineRepository medicineRepository;
+    private final DurRepository durRepository;
+    @Value("${api.service-key}")
+    private String serviceKey;
 
     public void fetchAndSaveDurRelations() {
         int pageNo = 1;
@@ -157,12 +155,11 @@ public class DurApiService {
     }
 
     private String buildUrl(int pageNo, int numOfRows) throws Exception {
-        StringBuilder urlBuilder = new StringBuilder(DUR_BASE_URL);
-        urlBuilder.append("?" + URLEncoder.encode("serviceKey", StandardCharsets.UTF_8) + "=" + serviceKey);
-        urlBuilder.append("&" + URLEncoder.encode("pageNo", StandardCharsets.UTF_8) + "=" + URLEncoder.encode(String.valueOf(pageNo), StandardCharsets.UTF_8));
-        urlBuilder.append("&" + URLEncoder.encode("numOfRows", StandardCharsets.UTF_8) + "=" + URLEncoder.encode(String.valueOf(numOfRows), StandardCharsets.UTF_8));
-        urlBuilder.append("&" + URLEncoder.encode("type", StandardCharsets.UTF_8) + "=" + URLEncoder.encode("json", StandardCharsets.UTF_8));
-        return urlBuilder.toString();
+        String urlBuilder = DUR_BASE_URL + "?" + URLEncoder.encode("serviceKey", StandardCharsets.UTF_8) + "=" + serviceKey +
+                "&" + URLEncoder.encode("pageNo", StandardCharsets.UTF_8) + "=" + URLEncoder.encode(String.valueOf(pageNo), StandardCharsets.UTF_8) +
+                "&" + URLEncoder.encode("numOfRows", StandardCharsets.UTF_8) + "=" + URLEncoder.encode(String.valueOf(numOfRows), StandardCharsets.UTF_8) +
+                "&" + URLEncoder.encode("type", StandardCharsets.UTF_8) + "=" + URLEncoder.encode("json", StandardCharsets.UTF_8);
+        return urlBuilder;
     }
 
     private String getApiResponse(String urlString) {

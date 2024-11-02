@@ -1,8 +1,8 @@
 package com.example.kaumedicare.User.service;
 
+import com.example.kaumedicare.Exception.UserException;
 import com.example.kaumedicare.User.dto.UserResponseDto;
 import com.example.kaumedicare.User.dto.UserSaveRequestDto;
-import com.example.kaumedicare.Exception.UserException;
 import com.example.kaumedicare.User.model.User;
 import com.example.kaumedicare.User.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

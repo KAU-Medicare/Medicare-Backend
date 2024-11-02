@@ -3,7 +3,6 @@ package com.example.kaumedicare.Dur.controller;
 import com.example.kaumedicare.Dur.dto.DurResponse;
 import com.example.kaumedicare.Dur.model.Dur;
 import com.example.kaumedicare.Dur.service.DurService;
-import com.example.kaumedicare.OpenAPI.service.DurApiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

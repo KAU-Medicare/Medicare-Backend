@@ -9,5 +9,6 @@ import java.util.Optional;
 @Repository
 public interface MedicineRepository extends JpaRepository<Medicine, Long> {
     boolean existsByItemSeq(String itemSeq);
+
     Optional<Medicine> findByItemSeq(String itemSeq);
 }
