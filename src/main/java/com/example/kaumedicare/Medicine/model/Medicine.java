@@ -21,7 +21,7 @@ public class Medicine {
     private String entpName;    // 업체명
 
     @Column(length = 1000)
-    private String itemName;    // 제품명
+    private String itemName;    // 제품명 (unique 제약조건 제거)
 
     @Column(nullable = false, unique = true)
     private String itemSeq;     // 품목기준코드
