@@ -69,6 +69,15 @@ public class UserService {
         return UserResponseDto.from(user); // 업데이트된 사용자 정보 반환
     }
 
+    // 닉네임으로 사용자 조회
+    @Transactional(readOnly = true)
+    public UserResponseDto findByNickname(String nickname) {
+        User user = userRepository.findByNickname(nickname)
+                .orElseThrow(() -> new UserException("해당 닉네임을 가진 사용자를 찾을 수 없습니다: " + nickname));
+        return UserResponseDto.from(user);
+    }
+
+
     // 로그아웃 처리 메서드 (트랜잭션 처리)
     @Transactional
     public void logout(String kakaoId) {

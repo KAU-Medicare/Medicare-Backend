@@ -14,6 +14,17 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final UserService userService;
 
+    // 닉네임으로 유저 조회
+    @GetMapping("/nickname/{nickname}")
+    public ResponseEntity<UserResponseDto> findByNickname(@PathVariable String nickname) {
+        try {
+            UserResponseDto user = userService.findByNickname(nickname);
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            throw new UserException("닉네임으로 사용자를 조회하는 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
     // 닉네임 변경
     @PutMapping("/{kakaoId}/nickname")
     public ResponseEntity<UserResponseDto> updateNickname(
