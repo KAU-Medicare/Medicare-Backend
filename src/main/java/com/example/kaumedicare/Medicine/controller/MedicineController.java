@@ -5,11 +5,15 @@ import com.example.kaumedicare.Medicine.dto.MedicineResponse;
 import com.example.kaumedicare.Medicine.model.Medicine;
 import com.example.kaumedicare.Medicine.service.MedicineService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/medicines")
 @RequiredArgsConstructor
@@ -19,20 +23,38 @@ public class MedicineController {
 
     @PostMapping("/fetch/main")
     public ResponseEntity<String> fetchMainMedicines() {
-        medicineService.fetchAndSaveMainMedicines();
-        return ResponseEntity.ok("기본 의약품 데이터 가져오기 완료");
+        try {
+            medicineService.fetchAndSaveMainMedicines();
+            return ResponseEntity.ok("기본 의약품 데이터 가져오기가 백그라운드에서 시작되었습니다.");
+        } catch (Exception e) {
+            log.error("기본 의약품 데이터 가져오기 실패: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("기본 의약품 데이터 가져오기 실패: " + e.getMessage());
+        }
     }
 
     @PostMapping("/fetch/dur")
     public ResponseEntity<String> fetchDurMedicines() {
-        medicineService.fetchAndSaveDurMedicines();
-        return ResponseEntity.ok("DUR 의약품 데이터 가져오기 완료");
+        try {
+            medicineService.fetchAndSaveDurMedicines();
+            return ResponseEntity.ok("DUR 의약품 데이터 가져오기가 백그라운드에서 시작되었습니다.");
+        } catch (Exception e) {
+            log.error("DUR 의약품 데이터 가져오기 실패: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("DUR 의약품 데이터 가져오기 실패: " + e.getMessage());
+        }
     }
 
     @PostMapping("/fetch/all")
     public ResponseEntity<String> fetchAllMedicines() {
-        medicineService.fetchAndSaveAllMedicines();
-        return ResponseEntity.ok("전체 의약품 데이터 가져오기 완료");
+        try {
+            medicineService.fetchAndSaveAllMedicines();
+            return ResponseEntity.ok("전체 의약품 데이터 가져오기가 백그라운드에서 시작되었습니다.");
+        } catch (Exception e) {
+            log.error("전체 의약품 데이터 가져오기 실패: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("전체 의약품 데이터 가져오기 실패: " + e.getMessage());
+        }
     }
 
     @GetMapping
