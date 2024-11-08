@@ -18,6 +18,32 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - app-network
+
+  ai-service:
+    container_name: kau-medicare-ai
+    image: python:3.9-slim
+    volumes:
+      - /home/ubuntu/deploy/chatbot:/app
+    working_dir: /app
+    ports:
+      - "5000:5000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    command: >
+      bash -c "apt-get update && 
+              apt-get install -y curl &&
+              pip install -r requirements.txt &&
+              python chatbot.py"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - app-network
 
   app:
     container_name: kau-medicare-app
@@ -30,11 +56,18 @@ services:
       db:
         condition: service_healthy
     environment:
-        - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/${DB_NAME}
-        - SPRING_DATASOURCE_USERNAME=${DB_USER_NAME}
-        - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/${DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER_NAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - AI_SERVICE_URL=http://ai-service:5000
     command: /bin/bash -c "/root/wait-for-it.sh db:3306 -s -t 100 -- java -jar /root/app.jar"
     restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   db_data:
