@@ -1,18 +1,18 @@
-package com.example.chatbotapp;
+package com.example.kaumedicare.Chatbotapp.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.kaumedicare.Chatbotapp.service.ChatbotService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "*")
+@RequiredArgsConstructor
+@RequestMapping("/api/chat")
 public class ChatbotController {
+    private final ChatbotService chatbotService;
 
-    @Autowired
-    private ChatbotService chatbotService;
-
-    @PostMapping("/chat")
+    @PostMapping
     public Map<String, String> chat(@RequestBody Map<String, String> request) {
         String message = request.get("message");
         String response = chatbotService.getChatbotResponse(message);
