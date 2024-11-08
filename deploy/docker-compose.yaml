@@ -71,3 +71,4 @@ networks:
 
 volumes:
   db_data:
+
