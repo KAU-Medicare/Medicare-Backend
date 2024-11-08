@@ -52,16 +52,12 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.SERVER_PORT }}
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER_NAME: ${{ secrets.DB_USER_NAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         script: |
           cd ~/deploy/kau-medicare/
-          export OPENAI_API_KEY="${OPENAI_API_KEY}"
-          export DB_NAME="${DB_NAME}"
-          export DB_USER_NAME="${DB_USER_NAME}"
-          export DB_PASSWORD="${DB_PASSWORD}"
+          export OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
+          export DB_NAME="${{ secrets.DB_NAME }}"
+          export DB_USER_NAME="${{ secrets.DB_USER_NAME }}"
+          export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
           docker-compose down && docker-compose build --no-cache && docker-compose up -d
+
 
