@@ -62,9 +62,6 @@ jobs:
     - name: Set execute permissions for chatbot.py
       run: ssh -p ${{ secrets.SERVER_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "chmod +x /home/${{ secrets.SSH_USER }}/deploy/chatbot/chatbot.py"
 
-    - name: Debug Secrets
-      run: echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}"
-
     - name: Execute remote commands
       uses: appleboy/ssh-action@master
       with:
@@ -72,14 +69,11 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.SERVER_PORT }}
-        envs: OPENAI_API_KEY
         script: |
           cd ~/deploy/kau-medicare/
-          OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
-          DB_NAME="${{ secrets.DB_NAME }}" \
-          DB_USER_NAME="${{ secrets.DB_USER_NAME }}" \
-          DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+          export OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
           sudo docker-compose down && sudo docker-compose build --no-cache && sudo docker-compose up -d
+
 
 
           
