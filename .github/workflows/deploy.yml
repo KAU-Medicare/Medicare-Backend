@@ -44,7 +44,18 @@ jobs:
 
     - name: Transfer built jar file via SCP
       run: scp -P ${{ secrets.SERVER_PORT }} ./build/libs/app.jar ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy/kau-medicare/web/app.jar
-    
+
+    - name: Set permissions on deploy directory
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SERVER_PORT }}
+        script: |
+          sudo chmod -R 775 /home/ubuntu/deploy
+          sudo chown -R ubuntu:ubuntu /home/ubuntu/deploy
+
     - name: Transfer chatbot directory via SCP
       run: scp -P ${{ secrets.SERVER_PORT }} -r ./chatbot ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy
 
