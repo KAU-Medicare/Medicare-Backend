@@ -59,6 +59,9 @@ jobs:
     - name: Transfer chatbot directory via SCP
       run: scp -P ${{ secrets.SERVER_PORT }} -r ./chatbot ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy
 
+    - name: Set execute permissions for chatbot.py
+      run: ssh -p ${{ secrets.SERVER_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "chmod +x /home/${{ secrets.SSH_USER }}/deploy/chatbot/chatbot.py"
+      
     - name: Execute remote commands
       uses: appleboy/ssh-action@master
       with:
@@ -66,15 +69,15 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: ${{ secrets.SERVER_PORT }}
+        envs: OPENAI_API_KEY
         script: |
-          cd ~/deploy/kau-medicare/
           export OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
           export DB_NAME="${{ secrets.DB_NAME }}"
           export DB_USER_NAME="${{ secrets.DB_USER_NAME }}"
           export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-          sudo docker-compose down
-          sudo docker-compose build --no-cache
-          sudo docker-compose up -d
+          cd ~/deploy/kau-medicare/
+          sudo docker-compose down && sudo docker-compose build --no-cache && sudo docker-compose up -d
+
           
 
 
