@@ -18,6 +18,8 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - app-network
 
   app:
     container_name: kau-medicare-app
@@ -32,12 +34,14 @@ services:
       ai-service:
         condition: service_healthy
     environment:
-        - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/${DB_NAME}
-        - SPRING_DATASOURCE_USERNAME=${DB_USER_NAME}
-        - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-        - AI_SERVICE_URL=http://ai-service:5000
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/${DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER_NAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - AI_SERVICE_URL=http://ai-service:5000
     command: /bin/bash -c "/root/wait-for-it.sh db:3306 -s -t 100 -- java -jar /root/app.jar"
     restart: unless-stopped
+    networks:
+      - app-network
 
   ai-service:
     container_name: kau-medicare-ai
@@ -58,6 +62,12 @@ services:
       timeout: 10s
       retries: 3
     restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   db_data:
