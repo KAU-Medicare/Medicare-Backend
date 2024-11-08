@@ -14,9 +14,9 @@ services:
       TZ: Asia/Seoul
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 30s
+      timeout: 10s
+      retries: 10
     restart: unless-stopped
     networks:
       - app-network
@@ -47,7 +47,7 @@ services:
     container_name: kau-medicare-ai
     image: python:3.9-slim
     volumes:
-      - ../chatbot:/app
+      - /home/ubuntu/deploy/chatbot:/app
     working_dir: /app
     ports:
       - "5000:5000"
@@ -60,7 +60,7 @@ services:
       test: ["CMD-SHELL", "curl -f http://localhost:5000/chat -H 'Content-Type: application/json' -d '{\"message\":\"test\"}' || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 10
     restart: unless-stopped
     networks:
       - app-network
