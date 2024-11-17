@@ -1,9 +1,6 @@
 package com.example.kaumedicare.User.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,10 +12,12 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "users")  // user -> users로 변경
 @Builder
 public class User {
     // 카카오 고유 ID, @Id: 기본키(Primary Key) 지정
     @Id
+    @Column(name = "kakao_id")  // 명시적으로 컬럼명 지정
     private String kakaoId;
 
     // 사용자 닉네임, @Column(nullable = false): NULL 값을 허용하지 않음
