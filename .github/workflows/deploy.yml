@@ -44,24 +44,25 @@ jobs:
 
     - name: Transfer built jar file via SCP
       run: |
-        # SSH 연결 최적화 옵션 추가
-        echo "
-        Host *
-          Compression yes
-          TCPKeepAlive yes
-          ServerAliveInterval 60
-          ServerAliveCountMax 5
-          ControlMaster auto
-          ControlPath ~/.ssh/control-%C
-          ControlPersist 10m" >> ~/.ssh/config
-    
-        echo "Starting JAR transfer..."
-        scp -B -o ConnectTimeout=30 \
-            -o PreferredAuthentications=publickey \
-            -o StrictHostKeyChecking=no \
-            -P ${{ secrets.SERVER_PORT }} \
-            ./build/libs/app.jar \
-            ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy/kau-medicare/web/app.jar
+        # 최대 3번 시도
+        for i in {1..3}; do
+          echo "Attempt $i of 3..."
+          if scp -B -o ConnectTimeout=30 \
+              -P ${{ secrets.SERVER_PORT }} \
+              ./build/libs/app.jar \
+              ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy/kau-medicare/web/app.jar; then
+            echo "Transfer successful on attempt $i"
+            exit 0
+          else
+            echo "Attempt $i failed"
+            if [ $i -lt 3 ]; then
+              echo "Waiting 10 seconds before next attempt..."
+              sleep 10
+            fi
+          fi
+        done
+        echo "All transfer attempts failed" >&2
+        exit 1
 
     - name: Set permissions on deploy directory
       uses: appleboy/ssh-action@master
