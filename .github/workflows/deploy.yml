@@ -42,27 +42,13 @@ jobs:
         mkdir -p ~/.ssh
         ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-    - name: Transfer built jar file via SCP
+    - name: Transfer built jar file via rsync
       run: |
-        # 최대 3번 시도
-        for i in {1..3}; do
-          echo "Attempt $i of 3..."
-          if scp -B -o ConnectTimeout=30 \
-              -P ${{ secrets.SERVER_PORT }} \
+        rsync -avz --progress \
+              --timeout=60 \
+              -e "ssh -p ${{ secrets.SERVER_PORT }}" \
               ./build/libs/app.jar \
-              ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy/kau-medicare/web/app.jar; then
-            echo "Transfer successful on attempt $i"
-            exit 0
-          else
-            echo "Attempt $i failed"
-            if [ $i -lt 3 ]; then
-              echo "Waiting 10 seconds before next attempt..."
-              sleep 10
-            fi
-          fi
-        done
-        echo "All transfer attempts failed" >&2
-        exit 1
+              ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy/kau-medicare/web/app.jar
 
     - name: Set permissions on deploy directory
       uses: appleboy/ssh-action@master
