@@ -42,8 +42,13 @@ jobs:
         mkdir -p ~/.ssh
         ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-    - name: Transfer built jar file via SCP
-      run: scp -P ${{ secrets.SERVER_PORT }} ./build/libs/app.jar ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy/kau-medicare/web/app.jar
+    - name: Transfer built jar file via rsync
+      run: |
+        rsync -avz --progress \
+              --timeout=60 \
+              -e "ssh -p ${{ secrets.SERVER_PORT }}" \
+              ./build/libs/app.jar \
+              ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy/kau-medicare/web/app.jar
 
     - name: Set permissions on deploy directory
       uses: appleboy/ssh-action@master
