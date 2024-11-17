@@ -43,33 +43,25 @@ jobs:
         ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
     - name: Transfer built jar file via SCP
-      timeout-minutes: 3
       run: |
-        echo "Starting JAR transfer with compression..."
-        # 압축 후 전송
-        gzip -c ./build/libs/app.jar > ./build/libs/app.jar.gz
-        
-        # 압축파일 전송
+        # SSH 연결 최적화 옵션 추가
+        echo "
+        Host *
+          Compression yes
+          TCPKeepAlive yes
+          ServerAliveInterval 60
+          ServerAliveCountMax 5
+          ControlMaster auto
+          ControlPath ~/.ssh/control-%C
+          ControlPersist 10m" >> ~/.ssh/config
+    
+        echo "Starting JAR transfer..."
         scp -B -o ConnectTimeout=30 \
+            -o PreferredAuthentications=publickey \
+            -o StrictHostKeyChecking=no \
             -P ${{ secrets.SERVER_PORT }} \
-            ./build/libs/app.jar.gz \
-            ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy/kau-medicare/web/
-        
-        # 원격지에서 압축해제
-        ssh -o ConnectTimeout=30 \
-            -p ${{ secrets.SERVER_PORT }} \
-            ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} \
-            "cd /home/${{ secrets.SSH_USER }}/deploy/kau-medicare/web/ && \
-             mv app.jar app.jar.backup-$(date +%Y%m%d_%H%M%S) 2>/dev/null || true && \
-             gunzip -f app.jar.gz && \
-             echo 'JAR file updated successfully'"
-        
-        if [ $? -eq 0 ]; then
-          echo "Transfer and deployment completed successfully"
-        else
-          echo "Transfer or deployment failed" >&2
-          exit 1
-        fi
+            ./build/libs/app.jar \
+            ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy/kau-medicare/web/app.jar
 
     - name: Set permissions on deploy directory
       uses: appleboy/ssh-action@master
