@@ -13,9 +13,11 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     command: >
       bash -c "apt-get update && 
-              apt-get install -y curl libglib2.0-0 libsm6 libxext6 libxrender-dev libgl1-mesa-glx &&
+              apt-get install -y curl libglib2.0-0 libsm6 libxext6 libxrender-dev libgl1-mesa-glx cmake build-essential &&
+              pip install dlib==19.24.0 &&
               pip install -r requirements.txt &&
               python app.py"
+
     healthcheck:
       test: curl -f http://localhost:5000/ || exit 1
       interval: 30s
