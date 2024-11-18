@@ -1,0 +1,46 @@
+package com.example.kaumedicare.User.controller;
+
+import com.example.kaumedicare.Exception.UserException;
+import com.example.kaumedicare.User.dto.UpdateNicknameRequest;
+import com.example.kaumedicare.User.dto.UserResponseDto;
+import com.example.kaumedicare.User.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/users")
+@RequiredArgsConstructor
+public class UserController {
+    private final UserService userService;
+
+    // 닉네임 변경
+    @PutMapping("/{kakaoId}/nickname")
+    public ResponseEntity<UserResponseDto> updateNickname(
+            @PathVariable String kakaoId,
+            @RequestBody UpdateNicknameRequest request) {
+        try {
+            UserResponseDto updatedUser = userService.updateNickname(kakaoId, request.getNewNickname());
+            return ResponseEntity.ok(updatedUser);
+        } catch (Exception e) {
+            throw new UserException("닉네임 변경 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    // 로그아웃
+    @PostMapping("/logout/{kakaoId}")
+    public ResponseEntity<Void> logout(@PathVariable String kakaoId) {
+        try {
+            userService.logout(kakaoId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            throw new UserException("로그아웃 처리 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    // 회원 정보 조회
+    @GetMapping("/{kakaoId}")
+    public ResponseEntity<UserResponseDto> findById(@PathVariable String kakaoId) {
+        return ResponseEntity.ok(userService.findById(kakaoId));
+    }
+}

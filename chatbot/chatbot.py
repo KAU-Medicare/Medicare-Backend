@@ -44,6 +44,10 @@ def get_chatbot_response(user_message):
 
     return bot_response
 
+@app.route('/')
+def health_check():
+    return "OK", 200
+
 @app.route('/chat', methods=['POST'])
 def chat():
     user_message = request.json['message']
