@@ -5,7 +5,7 @@ services:
     container_name: kau-medicare-ai
     image: python:3.9-slim
     volumes:
-      - /home/ubuntu/deploy/chatbot:/app
+      - /home/ubuntu/deploy/python-service:/app
     working_dir: /app
     ports:
       - "5000:5000"
@@ -13,9 +13,9 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     command: >
       bash -c "apt-get update && 
-              apt-get install -y curl &&
+              apt-get install -y curl libglib2.0-0 libsm6 libxext6 libxrender-dev libgl1-mesa-glx &&
               pip install -r requirements.txt &&
-              python chatbot.py"
+              python app.py"
     healthcheck:
       test: curl -f http://localhost:5000/ || exit 1
       interval: 30s

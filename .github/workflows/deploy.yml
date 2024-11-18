@@ -61,11 +61,11 @@ jobs:
           sudo chmod -R 775 /home/ubuntu/deploy
           sudo chown -R ubuntu:ubuntu /home/ubuntu/deploy
 
-    - name: Transfer chatbot directory via SCP
-      run: scp -P ${{ secrets.SERVER_PORT }} -r ./chatbot ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy
+    - name: Transfer Python service
+      run: scp -P ${{ secrets.SERVER_PORT }} -r ./python-service ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy
 
-    - name: Set execute permissions for chatbot.py
-      run: ssh -p ${{ secrets.SERVER_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "chmod +x /home/${{ secrets.SSH_USER }}/deploy/chatbot/chatbot.py"
+    - name: Set execute permissions for app.py
+      run: ssh -p ${{ secrets.SERVER_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "chmod +x /home/${{ secrets.SSH_USER }}/deploy/python-service/app.py"
 
     - name: Execute remote commands
       uses: appleboy/ssh-action@master
@@ -81,10 +81,3 @@ jobs:
           export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
           export OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
           sudo docker-compose down && sudo docker-compose build --no-cache && sudo docker-compose up -d
-          
-
-
-
-          
-
-
