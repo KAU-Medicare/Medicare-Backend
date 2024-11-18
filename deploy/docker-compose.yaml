@@ -3,21 +3,12 @@ version: '3'
 services:
   ai-service:
     container_name: kau-medicare-ai
-    image: python:3.9-slim
-    volumes:
-      - /home/ubuntu/deploy/python-service:/app
-    working_dir: /app
+    build:
+      context: ./python-service
     ports:
       - "5000:5000"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-    command: >
-      bash -c "apt-get update && 
-              apt-get install -y curl libglib2.0-0 libsm6 libxext6 libxrender-dev libgl1-mesa-glx cmake build-essential &&
-              pip install dlib==19.24.0 &&
-              pip install -r requirements.txt &&
-              python app.py"
-
     healthcheck:
       test: curl -f http://localhost:5000/ || exit 1
       interval: 30s
