@@ -61,8 +61,14 @@ jobs:
           sudo chmod -R 775 /home/ubuntu/deploy
           sudo chown -R ubuntu:ubuntu /home/ubuntu/deploy
 
-    - name: Transfer Python service
-      run: scp -P ${{ secrets.SERVER_PORT }} -r ./python-service ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy
+    - name: Transfer Python service via rsync
+      run: |
+        rsync -avz --progress \
+              --timeout=60 \
+              -e "ssh -p ${{ secrets.SERVER_PORT }}" \
+              ./python-service \
+              ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:/home/${{ secrets.SSH_USER }}/deploy
+    
 
     - name: Set execute permissions for app.py
       run: ssh -p ${{ secrets.SERVER_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "chmod +x /home/${{ secrets.SSH_USER }}/deploy/python-service/app.py"
