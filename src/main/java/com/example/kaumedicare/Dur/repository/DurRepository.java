@@ -13,4 +13,6 @@ public interface DurRepository extends JpaRepository<Dur, Long> {
 
     List<Dur> findByTargetMedicine_Id(Long targetId);
 
+    boolean existsByTargetMedicineIdAndDurMedicineId(Medicine targetMedicineId, Medicine durMedicineId);
+
 }

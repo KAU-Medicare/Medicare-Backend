@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "DIARIES")
+@Table(name = "diaries")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,17 +22,12 @@ public class Diary {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "DIARY_DATE", nullable = false)
+    @Column(nullable = false)
     private LocalDate date;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "KAKAO_ID", nullable = false)
+    @JoinColumn(name = "kakao_id", nullable = false)
     private User user;
-    @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL)
-    private List<TakenMedicine> takenMedicines = new ArrayList<>();
-
-    @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL)
-    private List<TakenHealthFood> takenHealthFoods = new ArrayList<>();
 
     @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL)
     private List<OccurredSymptom> occurredSymptoms = new ArrayList<>();
