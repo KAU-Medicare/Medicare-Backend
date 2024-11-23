@@ -1,5 +1,6 @@
 package com.example.kaumedicare.Diary.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,11 +16,14 @@ import java.util.List;
 @Builder
 public class InventoryRequest {
     private String kakaoId;
-    private Long itemId;  // medicine_id 또는 health_food_id
+    private Long itemId;
     private MedicineType type;
     private String nickname;
     private Integer capsuleCount;
     private Boolean useNotification;
+
+    @JsonFormat(pattern = "HH:mm:ss")
     private LocalTime takingTime;
+
     private List<DayOfWeek> takingDays;
 }
