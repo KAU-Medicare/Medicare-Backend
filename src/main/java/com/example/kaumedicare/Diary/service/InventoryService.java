@@ -4,11 +4,14 @@ import com.example.kaumedicare.Diary.dto.*;
 import com.example.kaumedicare.Diary.model.Inventory;
 import com.example.kaumedicare.Diary.repository.InventoryRepository;
 import com.example.kaumedicare.Dur.repository.DurRepository;
+import com.example.kaumedicare.HealthFood.model.HealthFood;
 import com.example.kaumedicare.HealthFood.repository.HealthFoodRepository;
 import com.example.kaumedicare.Medicine.model.Medicine;
 import com.example.kaumedicare.Medicine.repository.MedicineRepository;
 import com.example.kaumedicare.User.model.User;
 import com.example.kaumedicare.User.repository.UserRepository;
+import com.example.kaumedicare.Exception.DURConflictException;
+import com.example.kaumedicare.Exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,11 +34,24 @@ public class InventoryService {
     @Transactional
     public InventoryResponse register(InventoryRequest request) {
         User user = userRepository.findByKakaoId(request.getKakaoId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException(
+                        String.format("User not found with kakaoId: %s", request.getKakaoId())));
 
-        // DUR 체크 (약일 경우에만)
         if (request.getType() == MedicineType.MEDICINE) {
             checkDURConflict(request.getItemId(), request.getKakaoId());
+        }
+
+        Medicine medicine = null;
+        HealthFood healthFood = null;
+
+        if (request.getType() == MedicineType.MEDICINE) {
+            medicine = medicineRepository.findById(request.getItemId())
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            String.format("Medicine not found with id: %d", request.getItemId())));
+        } else {
+            healthFood = healthFoodRepository.findById(request.getItemId())
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            String.format("HealthFood not found with id: %d", request.getItemId())));
         }
 
         Inventory inventory = Inventory.builder()
@@ -54,20 +70,26 @@ public class InventoryService {
                 .takingDays(request.getTakingDays())
                 .build();
 
-        return InventoryResponse.from(inventoryRepository.save(inventory));
+        inventory.initializeTakenRecords();  // 명시적 초기화
+        Inventory savedInventory = inventoryRepository.save(inventory);
+
+        // 새로 등록된 경우에는 taken 상태를 false로 설정
+        return InventoryResponse.from(savedInventory);
     }
 
     private void checkDURConflict(Long newMedicineId, String kakaoId) {
         Medicine newMedicine = medicineRepository.findById(newMedicineId)
-                .orElseThrow(() -> new RuntimeException("Medicine not found"));
+                .orElseThrow(() -> new EntityNotFoundException(
+                        String.format("Medicine not found with id: %d", newMedicineId)));
 
         List<Inventory> userMedicines = inventoryRepository
                 .findByUserKakaoIdAndType(kakaoId, MedicineType.MEDICINE);
 
         for (Inventory inv : userMedicines) {
-            if (durRepository.existsByTargetMedicineAndDurMedicine(
-                    newMedicine, inv.getMedicine())) {
-                throw new RuntimeException("병용금기 약물이 존재합니다");
+            if (inv.getMedicine() != null &&
+                    durRepository.existsByTargetMedicineAndDurMedicine(newMedicine, inv.getMedicine())) {
+                throw new DURConflictException(
+                        String.format("병용금기 약물이 존재합니다: %s", inv.getMedicine().getItemName()));
             }
         }
     }

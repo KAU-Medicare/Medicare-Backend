@@ -4,6 +4,8 @@ import com.example.kaumedicare.Diary.dto.*;
 import com.example.kaumedicare.Diary.service.InventoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,12 +23,28 @@ import java.util.List;
 public class InventoryController {
     private final InventoryService inventoryService;
 
-    @Operation(summary = "약/영양제 등록", description = "새로운 약 또는 영양제를 복용 목록에 등록합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "등록 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-            @ApiResponse(responseCode = "409", description = "병용금기 약물 존재")
-    })
+    @Operation(summary = "약/영양제 등록")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "약/영양제 등록 정보",
+            required = true,
+            content = @Content(examples = {
+                    @ExampleObject(
+                            name = "약 등록 예시",
+                            value = """
+                {
+                    "kakaoId": "3763697930",
+                    "itemId": 1,
+                    "type": "MEDICINE",
+                    "nickname": "활명수별명",
+                    "capsuleCount": 2,
+                    "useNotification": true,
+                    "takingTime": "12:00:00",
+                    "takingDays": ["MONDAY"]
+                }
+                """
+                    )
+            })
+    )
     @PostMapping
     public ResponseEntity<InventoryResponse> registerInventory(
             @RequestBody InventoryRequest request
@@ -83,11 +101,25 @@ public class InventoryController {
         return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "약/영양제 정보 수정", description = "등록된 약/영양제의 정보를 수정합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "수정 성공"),
-            @ApiResponse(responseCode = "404", description = "해당 ID의 약/영양제를 찾을 수 없음")
-    })
+    @Operation(summary = "약/영양제 정보 수정")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "약/영양제 수정 정보",
+            required = true,
+            content = @Content(examples = {
+                    @ExampleObject(
+                            name = "수정 예시",
+                            value = """
+                {
+                    "nickname": "활명수",
+                    "capsuleCount": 2,
+                    "useNotification": true,
+                    "takingTime": "12:00:00",
+                    "takingDays": ["MONDAY"]
+                }
+                """
+                    )
+            })
+    )
     @PutMapping("/{id}")
     public ResponseEntity<InventoryResponse> updateInventory(
             @Parameter(description = "약/영양제 ID") @PathVariable Long id,
