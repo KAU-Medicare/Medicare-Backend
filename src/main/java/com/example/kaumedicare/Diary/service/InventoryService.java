@@ -41,6 +41,11 @@ public class InventoryService {
                 .orElseThrow(() -> new EntityNotFoundException(
                         String.format("User not found with kakaoId: %s", request.getKakaoId())));
 
+        // 미래 날짜 체크
+        if (request.getStartDate().isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("시작일은 미래 날짜가 될 수 없습니다.");
+        }
+
         if (request.getType() == MedicineType.MEDICINE) {
             checkDURConflict(request.getItemId(), request.getKakaoId());
         }
@@ -116,11 +121,17 @@ public class InventoryService {
     @Transactional
     public void deleteInventory(String kakaoId, Long id) {
         Inventory inventory = findInventoryWithPermissionCheck(kakaoId, id);
-        // 실제로 삭제하지 않고 종료일 설정
-        inventory.setEndDate(LocalDate.now());
-        inventoryRepository.save(inventory);
-    }
 
+        // 오늘 등록한 것인지 확인
+        if (inventory.getStartDate().equals(LocalDate.now())) {
+            // 오늘 등록한 약은 완전 삭제
+            inventoryRepository.deleteById(id);
+        } else {
+            // 이전에 등록한 약은 soft delete로 기록 유지
+            inventory.setEndDate(LocalDate.now());
+            inventoryRepository.save(inventory);
+        }
+    }
 
     @Transactional
     public InventoryResponse updateInventory(String kakaoId, Long id, UpdateInventoryRequest request) {
@@ -150,15 +161,18 @@ public class InventoryService {
     public void checkTaken(String kakaoId, Long id, LocalDate date, boolean taken) {
         Inventory inventory = findInventoryWithPermissionCheck(kakaoId, id);
 
-        if (taken) {
-            // 복용 체크
-            inventory.takeMedicine(date);
+        // endDate가 설정되어 있어도, date가 startDate와 endDate 사이에 있으면
+        // 복용 여부를 계속 수정할 수 있도록 함
+        if (isDateInRange(inventory, date)) {
+            if (taken) {
+                inventory.takeMedicine(date);
+            } else {
+                inventory.cancelTakeMedicine(date);
+            }
+            inventoryRepository.save(inventory);
         } else {
-            // 복용 체크 해제
-            inventory.cancelTakeMedicine(date);
+            throw new IllegalArgumentException("복용 기록을 수정할 수 없는 날짜입니다.");
         }
-
-        inventoryRepository.save(inventory);
     }
 
     public List<InventoryResponse> getDateInventories(String kakaoId, LocalDate date) {
@@ -182,7 +196,6 @@ public class InventoryService {
 
     private boolean isDateInRange(Inventory inventory, LocalDate date) {
         // startDate부터 endDate까지의 범위 체크
-        // endDate가 null이면 현재까지 계속 복용으로 간주
         return !date.isBefore(inventory.getStartDate()) &&
                 (inventory.getEndDate() == null || !date.isAfter(inventory.getEndDate()));
     }
