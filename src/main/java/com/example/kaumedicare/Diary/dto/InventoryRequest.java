@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -26,4 +27,7 @@ public class InventoryRequest {
     private LocalTime takingTime;
 
     private List<DayOfWeek> takingDays;
+
+    private LocalDate startDate;  // 복용 시작일
+    private LocalDate endDate;    // 복용 종료일 (선택)
 }

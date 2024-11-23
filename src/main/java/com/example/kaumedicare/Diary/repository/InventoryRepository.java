@@ -11,7 +11,9 @@ import java.util.List;
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     List<Inventory> findByUserKakaoId(String kakaoId);
+
     List<Inventory> findByUserKakaoIdAndType(String kakaoId, MedicineType type);
+
     List<Inventory> findByUserKakaoIdAndTakingDaysContaining(String kakaoId, DayOfWeek dayOfWeek);
 
 

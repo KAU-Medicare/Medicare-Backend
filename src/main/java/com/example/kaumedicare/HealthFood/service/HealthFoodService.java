@@ -3,7 +3,6 @@ package com.example.kaumedicare.HealthFood.service;
 import com.example.kaumedicare.HealthFood.dto.HealthFoodResponse;
 import com.example.kaumedicare.HealthFood.repository.HealthFoodRepository;
 import com.example.kaumedicare.OpenAPI.service.HealthFoodApiService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;

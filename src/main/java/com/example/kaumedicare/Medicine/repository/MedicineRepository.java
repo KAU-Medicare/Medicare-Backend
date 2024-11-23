@@ -12,5 +12,6 @@ public interface MedicineRepository extends JpaRepository<Medicine, Long> {
     boolean existsByItemSeq(String itemSeq);
 
     Optional<Medicine> findByItemSeq(String itemSeq);
+
     List<Medicine> findByItemNameContaining(String keyword);
 }

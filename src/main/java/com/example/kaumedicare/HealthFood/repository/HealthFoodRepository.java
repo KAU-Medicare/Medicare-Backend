@@ -9,5 +9,6 @@ import java.util.List;
 @Repository
 public interface HealthFoodRepository extends JpaRepository<HealthFood, Long> {
     boolean existsByStatementNo(String statementNo);
+
     List<HealthFood> findByProductContaining(String keyword);
 }

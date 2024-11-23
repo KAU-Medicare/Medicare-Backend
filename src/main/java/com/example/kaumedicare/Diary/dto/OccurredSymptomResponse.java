@@ -1,12 +1,11 @@
 package com.example.kaumedicare.Diary.dto;
 
 import com.example.kaumedicare.Diary.model.OccurredSymptom;
+import com.example.kaumedicare.Diary.model.Symptom;
 import lombok.Builder;
 import lombok.Getter;
-import com.example.kaumedicare.Diary.model.Symptom;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
