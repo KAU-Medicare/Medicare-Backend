@@ -1,22 +1,55 @@
-import cv2
-import numpy as np
-import os
-import dlib
 from flask import Flask, request, jsonify
-import base64
+from flask_cors import CORS
+import cv2, numpy as np, os, dlib, base64
+from openai import OpenAI
+from dotenv import load_dotenv
 
 app = Flask(__name__)
+CORS(app)
 
-# Haar Cascade 분류기 로드
+# OpenAI 설정
+load_dotenv()
+client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+app.json.ensure_ascii = False
+
+# 모자이크 설정
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 profile_face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
 eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
 eyeglasses_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye_tree_eyeglasses.xml')
-
-# dlib의 얼굴 탐지기와 랜드마크 예측기 로드
 detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor("Medicare-Backend/mosaic/shape_predictor_68_face_landmarks.dat")
+predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
+# 챗봇 설정
+conversation_history = []
+system_message = (
+    "당신은 의약품 및 영양제에 대한 전문 지식을 가진 AI 건강 보조 도우미입니다. "
+    "사용자가 제공한 정보를 바탕으로 알레르기 및 부작용의 가능성을 평가하고, "
+    "이를 이해하기 쉽게 설명해야 합니다. "
+    "모든 응답은 최신 의학 및 약리학 정보를 기반으로 하며, "
+    "사용자에게 신뢰할 수 있는 정보를 제공해야 합니다. "
+    "각 성분의 일반적인 부작용 및 알레르기 반응에 대한 정보를 명확히 언급하세요. "
+    "개인적인 의견이나 주관적인 해석을 피하고, 과학적 근거에 기반한 정보를 제공해야 합니다. "
+    "사용자의 복용 이력과 날짜에 따라 발생할 수 있는 부작용을 예측할 때, "
+    "객관적인 데이터와 사례를 활용하세요. "
+    "사용자가 질문한 의약품이나 영양제의 성분, 복용 방법, 상호작용 등에 대한 정보를 "
+    "제공하며, 사용자의 건강 상태에 맞는 적절한 조언을 할 수 있도록 합니다. "
+    "사용자가 제공한 정보에 대해 충분히 질문하여, 보다 정확한 정보를 제공할 수 있도록 하세요."
+)
+
+# 챗봇 함수
+def get_chatbot_response(user_message):
+    conversation_history.append({"role": "user", "content": user_message})
+    conversation_history.append({"role": "system", "content": system_message})
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=conversation_history
+    )
+    bot_response = completion.choices[0].message.content
+    conversation_history.append({"role": "assistant", "content": bot_response})
+    return bot_response
+
+# 모자이크 관련 함수들
 def safe_mosaic(image, rect):
     """ 안전한 모자이크 처리 함수
     - 입력된 영역이 유효하지 않은 경우에도 오류 없이 처리
@@ -143,7 +176,7 @@ def process_image(input_image_path, output_image_path):
     # Haar Cascade를 사용한 얼굴 탐지
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
     profile_faces = profile_face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
-    
+
     has_face_or_features = False
 
     # 정면 얼굴에서 눈 탐지
@@ -208,26 +241,37 @@ def process_image(input_image_path, output_image_path):
         print("Error: Failed to save the image.")
     return unique_output_path
 
-@app.route('/mosaic', methods=['POST'])  # '/mosaic' 경로로 POST 요청을 처리하는 라우트 정의
-def mosaic_image():  # 이미지 모자이크 처리 함수 정의
-    if 'file' not in request.files:  # 요청에 파일이 포함되어 있는지 확인
-        return jsonify({'error': 'No file part'}), 400  # 파일이 없으면 에러 응답 반환
-    file = request.files['file']  # 요청에서 파일 객체 추출
-    if file.filename == '':  # 파일 이름이 비어있는지 확인
-        return jsonify({'error': 'No selected file'}), 400  # 파일 이름이 비어있으면 에러 응답 반환
-    if file:  # 파일이 존재하면 처리 시작
-        input_path = 'Medicare-Backend/AllergyImages/ex6.jpg'  # 임시 입력 파일 경로 설정
-        output_path = 'Medicare-Backend/AllergyImages/out.jpg'  # 임시 출력 파일 경로 설정
-        file.save(input_path)  # 업로드된 파일을 임시 입력 경로에 저장
-        processed_path = process_image(input_path, output_path)  # 이미지 처리 함수 호출
-        
-        with open(processed_path, "rb") as image_file:  # 처리된 이미지 파일 열기
-            encoded_string = base64.b64encode(image_file.read()).decode('utf-8')  # 이미지를 base64로 인코딩
-        
-        os.remove(input_path)  # 임시 입력 파일 삭제
-        os.remove(processed_path)  # 처리된 임시 출력 파일 삭제
-        
-        return jsonify({'processed_image': encoded_string})  # 인코딩된 이미지 데이터를 JSON 형식으로 반환
+# 라우트 설정
+@app.route('/')
+def health_check():
+    return "OK", 200
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    user_message = request.json['message']
+    response = get_chatbot_response(user_message)
+    return jsonify({'response': response})
+
+@app.route('/mosaic', methods=['POST'])
+def mosaic_image():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    if file:
+        input_path = 'AllergyImages/ex6.jpg'
+        output_path = 'AllergyImages/out.jpg'
+        file.save(input_path)
+        processed_path = process_image(input_path, output_path)
+
+        with open(processed_path, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+
+        os.remove(input_path)
+        os.remove(processed_path)
+
+        return jsonify({'processed_image': encoded_string})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

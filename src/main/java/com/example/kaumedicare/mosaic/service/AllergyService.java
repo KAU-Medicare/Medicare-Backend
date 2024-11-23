@@ -18,7 +18,7 @@ import java.util.Base64;
 @Service
 public class AllergyService {
 
-    @Value("${flask.server.url}")
+    @Value("${mosaic.server.url}")
     private String flaskServerUrl;
 
     public String processAndSaveImage(MultipartFile image) throws IOException {
@@ -36,8 +36,7 @@ public class AllergyService {
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
         RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<String> response = restTemplate.postForEntity(flaskServerUrl + "/mosaic", requestEntity, String.class);
-
+        ResponseEntity<String> response = restTemplate.postForEntity(flaskServerUrl, requestEntity, String.class);
         // 임시 파일 삭제
         Files.delete(tempFile);
 

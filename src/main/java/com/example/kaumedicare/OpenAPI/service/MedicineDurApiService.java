@@ -9,6 +9,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,8 +20,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -29,22 +33,109 @@ public class MedicineDurApiService {
     private static final String DUR_BASE_URL = "https://apis.data.go.kr/1471000/DURPrdlstInfoService03/getUsjntTabooInfoList03";
     private static final int TOTAL_COUNT = 309747;
     private static final int NUM_OF_ROWS = 100;
-    private static final int MAX_RETRIES = 15;
+    private static final int MAX_RETRIES = 3;
     private static final long RETRY_DELAY_MS = 1000;
     private static final long RATE_LIMIT_DELAY_MS = 500;
+    private static final int BATCH_SIZE = 1000;
+    private static final int PARALLEL_THREADS = 5;
+
+    private ExecutorService executorService;
 
     @Value("${api.service-key}")
     private String serviceKey;
 
+    @PostConstruct
+    public void init() {
+        executorService = Executors.newFixedThreadPool(PARALLEL_THREADS);
+    }
+
+    @PreDestroy
+    public void cleanup() {
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdown();
+            try {
+                if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+                    executorService.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executorService.shutdownNow();
+            }
+        }
+    }
+
     public void fetchAndSaveAllDurMedicines(MedicineRepository medicineRepository) {
-        int pageNo = 1;
         int totalPages = (int) Math.ceil((double) TOTAL_COUNT / NUM_OF_ROWS);
-        Set<String> processedItemSeqs = new HashSet<>();
-        int successCount = 0;
-        int skipCount = 0;
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger skipCount = new AtomicInteger(0);
+        Set<String> processedItemSeqs = Collections.synchronizedSet(new HashSet<>());
+
+        BlockingQueue<Medicine> medicineQueue = new LinkedBlockingQueue<>(BATCH_SIZE * 2);
+
+        // 배치 저장 작업
+        CompletableFuture<Void> batchSaveFuture = CompletableFuture.runAsync(() -> {
+            List<Medicine> batch = new ArrayList<>(BATCH_SIZE);
+            while (true) {
+                try {
+                    Medicine medicine = medicineQueue.poll(5, TimeUnit.SECONDS);
+                    if (medicine == null && Thread.currentThread().isInterrupted()) {
+                        break;
+                    }
+
+                    if (medicine != null) {
+                        batch.add(medicine);
+                    }
+
+                    if (batch.size() >= BATCH_SIZE || (medicine == null && !batch.isEmpty())) {
+                        medicineRepository.saveAll(batch);
+                        log.debug("배치 저장 완료: {}개", batch.size());
+                        batch.clear();
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+            if (!batch.isEmpty()) {
+                medicineRepository.saveAll(batch);
+                log.debug("최종 배치 저장 완료: {}개", batch.size());
+            }
+        });
+
+        // 페이지 병렬 처리
+        int chunkSize = totalPages / PARALLEL_THREADS + 1;
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+        for (int i = 0; i < PARALLEL_THREADS; i++) {
+            int startPage = i * chunkSize + 1;
+            int endPage = Math.min((i + 1) * chunkSize, totalPages);
+
+            futures.add(CompletableFuture.runAsync(() ->
+                            processPageRange(startPage, endPage, medicineRepository, medicineQueue,
+                                    processedItemSeqs, successCount, skipCount),
+                    executorService));
+        }
 
         try {
-            for (pageNo = 1; pageNo <= totalPages; pageNo++) {
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+            batchSaveFuture.join();
+
+            log.info("DUR API 작업 완료: 총 {}개 저장, {}개 스킵",
+                    successCount.get(), skipCount.get());
+        } catch (Exception e) {
+            log.error("DUR API 의약품 데이터 가져오기 실패: ", e);
+            throw new RuntimeException("DUR API 의약품 데이터 가져오기 실패: " + e.getMessage());
+        }
+    }
+
+    private void processPageRange(int startPage, int endPage,
+                                  MedicineRepository medicineRepository,
+                                  BlockingQueue<Medicine> medicineQueue,
+                                  Set<String> processedItemSeqs,
+                                  AtomicInteger successCount,
+                                  AtomicInteger skipCount) {
+        for (int pageNo = startPage; pageNo <= endPage; pageNo++) {
+            try {
+                log.info("DUR API 페이지 {} 처리 중 ({}/{})", pageNo, pageNo, endPage);
                 final int currentPage = pageNo;
                 JsonNode items = retryWithBackoff(() -> {
                     try {
@@ -55,53 +146,69 @@ public class MedicineDurApiService {
                 });
 
                 if (items == null || items.isEmpty() || items.isNull()) {
-                    log.warn("DUR API 페이지 {}: 데이터가 없습니다.", currentPage);
+                    log.warn("DUR API 페이지 {}: 데이터가 없습니다. 다음 페이지로 진행합니다.", pageNo);
                     continue;
                 }
 
-                int pageSuccessCount = 0;
-                int pageSkipCount = 0;
-
                 for (JsonNode item : items) {
-                    // 원래 약품 저장
-                    String mainItemSeq = item.path("ITEM_SEQ").asText();
-                    if (!processedItemSeqs.contains(mainItemSeq) && !medicineRepository.existsByItemSeq(mainItemSeq)) {
-                        saveMedicine(medicineRepository, mainItemSeq,
-                                item.path("ITEM_NAME").asText(),
-                                item.path("ENTP_NAME").asText());
-                        processedItemSeqs.add(mainItemSeq);
-                        pageSuccessCount++;
-                    } else {
-                        pageSkipCount++;
-                    }
+                    processMedicineItem(item, "ITEM_SEQ", "ITEM_NAME", "ENTP_NAME",
+                            medicineRepository, medicineQueue, processedItemSeqs,
+                            successCount, skipCount);
 
-                    // 병용금기 약품 저장
-                    String mixtureItemSeq = item.path("MIXTURE_ITEM_SEQ").asText();
-                    if (!processedItemSeqs.contains(mixtureItemSeq) && !medicineRepository.existsByItemSeq(mixtureItemSeq)) {
-                        saveMedicine(medicineRepository, mixtureItemSeq,
-                                item.path("MIXTURE_ITEM_NAME").asText(),
-                                item.path("MIXTURE_ENTP_NAME").asText());
-                        processedItemSeqs.add(mixtureItemSeq);
-                        pageSuccessCount++;
-                    } else {
-                        pageSkipCount++;
-                    }
+                    processMedicineItem(item, "MIXTURE_ITEM_SEQ", "MIXTURE_ITEM_NAME", "MIXTURE_ENTP_NAME",
+                            medicineRepository, medicineQueue, processedItemSeqs,
+                            successCount, skipCount);
                 }
 
-                successCount += pageSuccessCount;
-                skipCount += pageSkipCount;
-
                 log.info("DUR API 페이지 {} 완료: {}개 저장, {}개 스킵 (총 저장: {})",
-                        currentPage, pageSuccessCount, pageSkipCount, successCount);
+                        pageNo, successCount.get(), skipCount.get());
 
                 Thread.sleep(RATE_LIMIT_DELAY_MS);
+            } catch (Exception e) {
+                log.error("페이지 {} 처리 중 오류 발생: {}. 다음 페이지로 진행합니다.", pageNo, e.getMessage());
+                try {
+                    // 오류 발생 시에도 rate limit은 지켜줍니다
+                    Thread.sleep(RATE_LIMIT_DELAY_MS);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    log.error("스레드 인터럽트 발생");
+                    break;
+                }
+                continue; // 다음 페이지로 진행
             }
+        }
+    }
 
-            log.info("DUR API 작업 완료: 총 {}개 저장, {}개 스킵", successCount, skipCount);
+    private void processMedicineItem(JsonNode item,
+                                     String seqField, String nameField, String entpField,
+                                     MedicineRepository medicineRepository,
+                                     BlockingQueue<Medicine> medicineQueue,
+                                     Set<String> processedItemSeqs,
+                                     AtomicInteger successCount,
+                                     AtomicInteger skipCount) {
+        String itemSeq = item.path(seqField).asText();
+        if (itemSeq != null && !itemSeq.isEmpty()) {
+            if (!processedItemSeqs.contains(itemSeq) && !medicineRepository.existsByItemSeq(itemSeq)) {
+                try {
+                    String itemName = item.path(nameField).asText();
+                    String processedItemName = itemName != null ?
+                            (itemName.length() > 1000 ? itemName.substring(0, 1000) : itemName) : "";
 
-        } catch (Exception e) {
-            log.error("DUR API 의약품 데이터 가져오기 실패 (페이지 {}): ", pageNo, e);
-            throw new RuntimeException("DUR API 의약품 데이터 가져오기 실패: " + e.getMessage());
+                    Medicine medicine = Medicine.builder()
+                            .itemSeq(itemSeq)
+                            .itemName(processedItemName)
+                            .entpName(item.path(entpField).asText())
+                            .build();
+
+                    medicineQueue.put(medicine);
+                    processedItemSeqs.add(itemSeq);
+                    successCount.incrementAndGet();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            } else {
+                skipCount.incrementAndGet();
+            }
         }
     }
 
@@ -171,25 +278,6 @@ public class MedicineDurApiService {
     private String readResponse(InputStream stream) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
             return reader.lines().collect(Collectors.joining("\n"));
-        }
-    }
-
-    private void saveMedicine(MedicineRepository medicineRepository, String itemSeq, String itemName, String entpName) {
-        try {
-            if (itemSeq != null && !itemSeq.isEmpty()) {
-                String processedItemName = itemName != null ?
-                        (itemName.length() > 1000 ? itemName.substring(0, 1000) : itemName) : "";
-
-                Medicine medicine = Medicine.builder()
-                        .itemSeq(itemSeq)
-                        .itemName(processedItemName)
-                        .entpName(entpName)
-                        .build();
-
-                medicineRepository.save(medicine);
-            }
-        } catch (Exception e) {
-            log.warn("약품 저장 실패 (itemSeq: {}): {}", itemSeq, e.getMessage());
         }
     }
 }
