@@ -6,8 +6,10 @@ import com.example.kaumedicare.Diary.dto.SymptomResponse;
 import com.example.kaumedicare.Diary.model.Diary;
 import com.example.kaumedicare.Diary.model.OccurredSymptom;
 import com.example.kaumedicare.Diary.model.Symptom;
+import com.example.kaumedicare.Diary.repository.DiaryRepository;
 import com.example.kaumedicare.Diary.repository.OccurredSymptomRepository;
 import com.example.kaumedicare.Diary.repository.SymptomRepository;
+import com.example.kaumedicare.Exception.EntityNotFoundException;
 import com.example.kaumedicare.User.model.User;
 import com.example.kaumedicare.User.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,8 @@ public class SymptomService {
     private final OccurredSymptomRepository occurredSymptomRepository;
     private final UserRepository userRepository;
 
+    private final DiaryRepository diaryRepository;
+
     public List<SymptomResponse> getAllSymptoms() {
         return symptomRepository.findAll().stream()
                 .map(symptom -> SymptomResponse.builder()
@@ -38,18 +42,34 @@ public class SymptomService {
     @Transactional
     public OccurredSymptomResponse recordSymptom(RecordSymptomRequest request) {
         User user = userRepository.findByKakaoId(request.getKakaoId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
+        // symptomIds가 비어있는지 확인
+        if (request.getSymptomIds() == null || request.getSymptomIds().isEmpty()) {
+            throw new IllegalArgumentException("At least one symptom must be provided");
+        }
+
+        // 모든 증상이 실제로 존재하는지 확인
         List<Symptom> symptoms = symptomRepository.findAllById(request.getSymptomIds());
+        if (symptoms.size() != request.getSymptomIds().size()) {
+            throw new EntityNotFoundException("Some symptoms not found");
+        }
 
-        Diary diary = Diary.builder()
-                .date(request.getOccurredDateTime().toLocalDate())
-                .user(user)
-                .build();
+        // 날짜에 해당하는 Diary 찾기 또는 생성
+        LocalDate date = request.getOccurredDateTime().toLocalDate();
+        Diary diary = diaryRepository.findByUserKakaoIdAndDate(user.getKakaoId(), date)
+                .orElseGet(() -> {
+                    Diary newDiary = Diary.builder()
+                            .date(date)
+                            .user(user)
+                            .build();
+                    return diaryRepository.save(newDiary);
+                });
 
+        // OccurredSymptom 생성 및 저장
         OccurredSymptom occurredSymptom = OccurredSymptom.builder()
                 .diary(diary)
-                .symptoms(symptoms)  // 여러 증상 한 번에 설정
+                .symptoms(symptoms)  // 여기서 symptoms가 비어있지 않은지 확인
                 .occurredDateTime(request.getOccurredDateTime())
                 .base64Image(request.getBase64Image())
                 .build();

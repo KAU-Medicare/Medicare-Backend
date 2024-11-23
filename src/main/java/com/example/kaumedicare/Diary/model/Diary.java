@@ -22,7 +22,7 @@ public class Diary {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "diary_date", nullable = false)  // 컬럼명 명시적 지정
     private LocalDate date;
 
     @ManyToOne(fetch = FetchType.LAZY)

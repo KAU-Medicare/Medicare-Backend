@@ -30,7 +30,7 @@ public class OccurredSymptom {
     @JoinTable(
             name = "occurred_symptom_items",
             joinColumns = @JoinColumn(name = "occurred_symptom_id"),
-            inverseJoinColumns = @JoinColumn(name = "symptom_id")
+            inverseJoinColumns = @JoinColumn(name = "symptom_id", nullable = false)
     )
     private List<Symptom> symptoms = new ArrayList<>();
 
