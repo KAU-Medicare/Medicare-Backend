@@ -1,6 +1,9 @@
 package com.example.kaumedicare.Diary.controller;
 
-import com.example.kaumedicare.Diary.dto.*;
+import com.example.kaumedicare.Diary.dto.InventoryRequest;
+import com.example.kaumedicare.Diary.dto.InventoryResponse;
+import com.example.kaumedicare.Diary.dto.UpdateInventoryRequest;
+import com.example.kaumedicare.Diary.dto.UpdateItemNicknameRequest;
 import com.example.kaumedicare.Diary.service.InventoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -31,17 +34,19 @@ public class InventoryController {
                     @ExampleObject(
                             name = "약 등록 예시",
                             value = """
-                {
-                    "kakaoId": "3763697930",
-                    "itemId": 1,
-                    "type": "MEDICINE",
-                    "nickname": "활명수별명",
-                    "capsuleCount": 2,
-                    "useNotification": true,
-                    "takingTime": "12:00:00",
-                    "takingDays": ["MONDAY"]
-                }
-                """
+                                    {
+                                        "kakaoId": "3763697930",
+                                        "itemId": 1,
+                                        "type": "MEDICINE",
+                                        "nickname": "활명수별명",
+                                        "capsuleCount": 2,
+                                        "useNotification": true,
+                                        "takingTime": "12:00:00",
+                                        "takingDays": ["MONDAY"],
+                                        "startDate": "2024-11-23",
+                                        "endDate": null
+                                    }
+                                    """
                     )
             })
     )
@@ -75,29 +80,28 @@ public class InventoryController {
     }
 
     @Operation(summary = "약/영양제 별명 수정", description = "등록된 약/영양제의 별명을 수정합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "수정 성공"),
-            @ApiResponse(responseCode = "404", description = "해당 ID의 약/영양제를 찾을 수 없음")
-    })
-    @PutMapping("/{id}/nickname")
+    @PutMapping("/{kakaoId}/{id}/nickname")
     public ResponseEntity<Void> updateNickname(
+            @Parameter(description = "사용자 카카오 ID") @PathVariable String kakaoId,
             @Parameter(description = "약/영양제 ID") @PathVariable Long id,
             @RequestBody UpdateItemNicknameRequest request
     ) {
-        inventoryService.updateNickname(id, request.getNickname());
+        inventoryService.updateNickname(kakaoId, id, request.getNickname());
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "약/영양제 삭제", description = "등록된 약/영양제를 삭제합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "삭제 성공"),
-            @ApiResponse(responseCode = "404", description = "해당 ID의 약/영양제를 찾을 수 없음")
+            @ApiResponse(responseCode = "404", description = "해당 ID의 약/영양제를 찾을 수 없음"),
+            @ApiResponse(responseCode = "403", description = "삭제 권한 없음")
     })
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{kakaoId}/{id}")
     public ResponseEntity<Void> deleteInventory(
+            @Parameter(description = "사용자 카카오 ID") @PathVariable String kakaoId,
             @Parameter(description = "약/영양제 ID") @PathVariable Long id
     ) {
-        inventoryService.deleteInventory(id);
+        inventoryService.deleteInventory(kakaoId, id);
         return ResponseEntity.ok().build();
     }
 
@@ -109,37 +113,35 @@ public class InventoryController {
                     @ExampleObject(
                             name = "수정 예시",
                             value = """
-                {
-                    "nickname": "활명수",
-                    "capsuleCount": 2,
-                    "useNotification": true,
-                    "takingTime": "12:00:00",
-                    "takingDays": ["MONDAY"]
-                }
-                """
+                                    {
+                                        "nickname": "활명수",
+                                        "capsuleCount": 2,
+                                        "useNotification": true,
+                                        "takingTime": "12:00:00",
+                                        "takingDays": ["MONDAY"]
+                                    }
+                                    """
                     )
             })
     )
-    @PutMapping("/{id}")
+    @PutMapping("/{kakaoId}/{id}")
     public ResponseEntity<InventoryResponse> updateInventory(
+            @Parameter(description = "사용자 카카오 ID") @PathVariable String kakaoId,
             @Parameter(description = "약/영양제 ID") @PathVariable Long id,
             @RequestBody UpdateInventoryRequest request
     ) {
-        return ResponseEntity.ok(inventoryService.updateInventory(id, request));
+        return ResponseEntity.ok(inventoryService.updateInventory(kakaoId, id, request));
     }
 
     @Operation(summary = "복용 여부 체크", description = "특정 날짜의 약/영양제 복용 여부를 체크합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "체크 성공"),
-            @ApiResponse(responseCode = "404", description = "해당 ID의 약/영양제를 찾을 수 없음")
-    })
-    @PutMapping("/{id}/taken")
+    @PutMapping("/{kakaoId}/{id}/taken")
     public ResponseEntity<Void> checkTaken(
+            @Parameter(description = "사용자 카카오 ID") @PathVariable String kakaoId,
             @Parameter(description = "약/영양제 ID") @PathVariable Long id,
             @Parameter(description = "복용 날짜 (yyyy-MM-dd)") @RequestParam LocalDate date,
             @Parameter(description = "복용 여부 (true/false)") @RequestParam boolean taken
     ) {
-        inventoryService.checkTaken(id, date, taken);
+        inventoryService.checkTaken(kakaoId, id, date, taken);
         return ResponseEntity.ok().build();
     }
 
