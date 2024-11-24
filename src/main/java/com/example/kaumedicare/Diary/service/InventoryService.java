@@ -176,10 +176,10 @@ public class InventoryService {
         Inventory inventory = findInventoryWithPermissionCheck(kakaoId, id);
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
 
-        // 오늘과 이후 날짜는 복용 기록 수정 불가
-        if (!isDateInRange(inventory, date) || !date.isBefore(today)) {
+        if (!isDateInRange(inventory, date) || date.isAfter(today)) {
             throw new IllegalArgumentException("복용 기록을 수정할 수 없는 날짜입니다.");
         }
+
 
         try {
             if (taken) {
@@ -217,10 +217,10 @@ public class InventoryService {
         if (date.isBefore(inventory.getStartDate())) {
             return false; // 시작일 이전은 제외
         }
-        if (inventory.getEndDate() != null && !date.isBefore(inventory.getEndDate().plusDays(1))) {
-            return false; // 종료일 포함 오늘 이후는 제외
+        if (inventory.getEndDate() != null && date.isAfter(inventory.getEndDate())) {
+            return false; // 종료일 이후는 제외
         }
-        return true;
+        return true; // 시작일과 종료일 사이 포함
     }
 
 
