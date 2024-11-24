@@ -162,6 +162,28 @@ public class Inventory {
     public void updateUseNotification(Boolean useNotification) {
         this.useNotification = useNotification;
     }
+
+    @Version  // 낙관적 락을 위한 버전 필드 추가
+    private Long version;
+
+    @PrePersist
+    @PreUpdate
+    private void validateDates() {
+        if (startDate == null) {
+            throw new IllegalStateException("시작일은 필수입니다.");
+        }
+
+        if (endDate != null && endDate.isBefore(startDate)) {
+            throw new IllegalStateException("종료일이 시작일보다 빠를 수 없습니다.");
+        }
+    }
+
+    // 활성 상태 체크 메소드 추가
+    public boolean isActive(LocalDate referenceDate) {
+        // startDate는 @PrePersist로 보장되어 null 체크 불필요
+        if (startDate.isAfter(referenceDate)) return false;
+        return endDate == null || endDate.isAfter(referenceDate);
+    }
 }
 
 
