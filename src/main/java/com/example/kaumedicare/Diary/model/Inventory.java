@@ -163,8 +163,9 @@ public class Inventory {
         this.useNotification = useNotification;
     }
 
-    @Version  // 낙관적 락을 위한 버전 필드 추가
-    private Long version;
+    // 낙관적 락을 위한 버전 필드 추가
+    @Version
+    private Long version = 0L;  // 초기값 설정
 
     @PrePersist
     @PreUpdate
