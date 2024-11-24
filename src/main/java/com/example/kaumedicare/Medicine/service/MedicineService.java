@@ -22,6 +22,7 @@ public class MedicineService {
     private final MedicineApiService medicineApiService;
     private final MedicineDurApiService medicineDurApiService;
 
+
     @Async
     public CompletableFuture<String> fetchAndSaveMainMedicines() {
         return CompletableFuture.supplyAsync(() -> {
@@ -70,6 +71,10 @@ public class MedicineService {
                 throw new RuntimeException("전체 의약품 데이터 저장 중 오류가 발생했습니다.", e);
             }
         });
+    }
+
+    public Optional<Medicine> findByItemSeq(String itemSeq) {
+        return medicineRepository.findByItemSeq(itemSeq);
     }
 
     public List<Medicine> getAllMedicines() {
