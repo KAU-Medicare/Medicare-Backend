@@ -17,6 +17,7 @@ import com.example.kaumedicare.Medicine.repository.MedicineRepository;
 import com.example.kaumedicare.User.model.User;
 import com.example.kaumedicare.User.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -127,24 +129,19 @@ public class InventoryService {
     @Transactional
     public void deleteInventory(String kakaoId, Long id) {
         Inventory inventory = findInventoryWithPermissionCheck(kakaoId, id);
-        LocalDate today = LocalDate.now(KOREA_TIMEZONE);
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
 
-        // 이미 종료된 경우 체크
-        if (inventory.getEndDate() != null && !inventory.getEndDate().isAfter(today)) {
-            throw new IllegalStateException("이미 종료된 약입니다.");
-        }
+        log.info("Deleting inventory - startDate: {}, today: {}",
+                inventory.getStartDate(), today);
 
-        // 시작일이 미래인 경우 완전 삭제
-        if (inventory.getStartDate().isAfter(today)) {
+        // isEqual() 사용하여 날짜 비교
+        if (inventory.getStartDate().isEqual(today)) {
+            log.info("Hard deleting inventory {}", id);
             inventoryRepository.deleteById(id);
-            return;
-        }
-
-        try {
+        } else {
+            log.info("Soft deleting inventory {}", id);
             inventory.setEndDate(today);
             inventoryRepository.save(inventory);
-        } catch (OptimisticLockingFailureException e) {
-            throw new ConcurrentModificationException("다른 사용자가 동시에 수정하고 있습니다. 다시 시도해주세요.");
         }
     }
 
