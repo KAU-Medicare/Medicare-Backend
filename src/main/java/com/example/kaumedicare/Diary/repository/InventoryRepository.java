@@ -21,9 +21,10 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     @Query("SELECT i FROM Inventory i WHERE i.user.kakaoId = :kakaoId " +
             "AND i.startDate <= :referenceDate " +
-            "AND (i.endDate IS NULL OR i.endDate > :referenceDate)")
+            "AND (i.endDate IS NULL OR (i.endDate >= :referenceDate AND i.endDate > i.startDate))")
     List<Inventory> findCurrentInventoriesByKakaoId(
             @Param("kakaoId") String kakaoId,
             @Param("referenceDate") LocalDate referenceDate
+
     );
 }
