@@ -1,9 +1,11 @@
 package com.example.kaumedicare.Medicine.controller;
 
 
+import com.example.kaumedicare.Exception.EntityNotFoundException;
 import com.example.kaumedicare.Medicine.dto.MedicineResponse;
 import com.example.kaumedicare.Medicine.model.Medicine;
 import com.example.kaumedicare.Medicine.service.MedicineService;
+import com.example.kaumedicare.StandardCode.service.StandardCodeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -19,6 +21,7 @@ import java.util.List;
 public class MedicineController {
 
     private final MedicineService medicineService;
+    private final StandardCodeService standardCodeService;
 
     @PostMapping("/fetch/main")
     public ResponseEntity<String> fetchMainMedicines() {
@@ -71,5 +74,22 @@ public class MedicineController {
                 .map(MedicineResponse::from)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    // API to update DB to latest data
+    @PostMapping("/update-standard-codes")
+    public ResponseEntity<String> updateStandardCodes() {
+        standardCodeService.updateStandardCodes();
+        return ResponseEntity.ok("의약품 표준코드 데이터 업데이트가 완료되었습니다.");
+    }
+
+    @GetMapping("/standard-code/{standardCode}")
+    public ResponseEntity<MedicineResponse> findByStandardCode(@PathVariable String standardCode) {
+        String itemSeq = standardCodeService.findItemSeqByStandardCode(standardCode);
+        Medicine medicine = medicineService.findByItemSeq(itemSeq)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        String.format("품목기준코드 %s에 해당하는 의약품을 찾을 수 없습니다.", itemSeq)));
+
+        return ResponseEntity.ok(MedicineResponse.from(medicine));
     }
 }
