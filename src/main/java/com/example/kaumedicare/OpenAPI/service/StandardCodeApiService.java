@@ -23,7 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StandardCodeApiService {
 
-    private static final String BASE_URL = "http://apis.data.go.kr/B551182/medicInsupPriceInfoService/getMedicInsupPriceInfo";
+    private static final String BASE_URL = "http://api.odcloud.kr/api/15067462/v1/uddi:779e36df-3f90-4574-8694-dd39e897a504";
 
     @Value("${api.service-key}")
     private String serviceKey;
