@@ -109,16 +109,22 @@ public class InventoryService {
         LocalDate today = LocalDate.now(KOREA_TIMEZONE);
         return inventoryRepository.findCurrentInventoriesByKakaoId(kakaoId, today)
                 .stream()
+                .filter(inventory -> isDateInRange(inventory, today))
                 .map(InventoryResponse::from)
                 .collect(Collectors.toList());
     }
+
     public List<InventoryResponse> getTodayInventories(String kakaoId) {
         DayOfWeek today = LocalDate.now().getDayOfWeek();
+        LocalDate now = LocalDate.now(KOREA_TIMEZONE);
+
         return inventoryRepository.findByUserKakaoIdAndTakingDaysContaining(kakaoId, today)
                 .stream()
+                .filter(inventory -> isDateInRange(inventory, now)) // 날짜 범위 체크 추가
                 .map(InventoryResponse::from)
                 .collect(Collectors.toList());
     }
+
 
     @Transactional
     public void updateNickname(String kakaoId, Long id, String nickname) {
@@ -131,19 +137,15 @@ public class InventoryService {
         Inventory inventory = findInventoryWithPermissionCheck(kakaoId, id);
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
 
-        log.info("Deleting inventory - startDate: {}, today: {}",
-                inventory.getStartDate(), today);
-
-        // isEqual() 사용하여 날짜 비교
+        // soft delete 처리 시 endDate를 오늘의 전날로 설정
         if (inventory.getStartDate().isEqual(today)) {
-            log.info("Hard deleting inventory {}", id);
-            inventoryRepository.deleteById(id);
+            inventoryRepository.deleteById(id); // hard delete
         } else {
-            log.info("Soft deleting inventory {}", id);
-            inventory.setEndDate(today);
+            inventory.setEndDate(today.minusDays(1)); // endDate를 어제로 설정
             inventoryRepository.save(inventory);
         }
     }
+
 
     @Transactional
     public InventoryResponse updateInventory(String kakaoId, Long id, UpdateInventoryRequest request) {
@@ -172,15 +174,10 @@ public class InventoryService {
     @Transactional
     public void checkTaken(String kakaoId, Long id, LocalDate date, boolean taken) {
         Inventory inventory = findInventoryWithPermissionCheck(kakaoId, id);
-        LocalDate today = LocalDate.now(KOREA_TIMEZONE);
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
 
-        // 미래 날짜 체크
-        if (date.isAfter(today)) {
-            throw new IllegalArgumentException("미래 날짜의 복용 여부는 수정할 수 없습니다.");
-        }
-
-        // 복용 가능 기간 체크
-        if (!isDateInRange(inventory, date)) {
+        // 오늘과 이후 날짜는 복용 기록 수정 불가
+        if (!isDateInRange(inventory, date) || !date.isBefore(today)) {
             throw new IllegalArgumentException("복용 기록을 수정할 수 없는 날짜입니다.");
         }
 
@@ -195,6 +192,7 @@ public class InventoryService {
             throw new ConcurrentModificationException("다른 사용자가 동시에 수정하고 있습니다. 다시 시도해주세요.");
         }
     }
+
 
     public List<InventoryResponse> getDateInventories(String kakaoId, LocalDate date) {
         DayOfWeek dayOfWeek = date.getDayOfWeek();
@@ -215,26 +213,16 @@ public class InventoryService {
                 .collect(Collectors.toList());
     }
 
-    private boolean isDateInRange(Inventory inventory, LocalDate date) {
-        LocalDate today = LocalDate.now(KOREA_TIMEZONE);
-
-        // 시작일 이전 체크
+    public boolean isDateInRange(Inventory inventory, LocalDate date) {
         if (date.isBefore(inventory.getStartDate())) {
-            return false;
+            return false; // 시작일 이전은 제외
         }
-
-        // 종료일 이후 체크 (종료일이 있는 경우)
-        if (inventory.getEndDate() != null && date.isAfter(inventory.getEndDate())) {
-            return false;
+        if (inventory.getEndDate() != null && !date.isBefore(inventory.getEndDate().plusDays(1))) {
+            return false; // 종료일 포함 오늘 이후는 제외
         }
-
-        // 미래 날짜 체크
-        if (date.isAfter(today)) {
-            return false;
-        }
-
         return true;
     }
+
 
     private Inventory findInventoryWithPermissionCheck(String kakaoId, Long id) {
         Inventory inventory = inventoryRepository.findById(id)
