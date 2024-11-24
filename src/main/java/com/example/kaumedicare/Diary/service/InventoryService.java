@@ -17,11 +17,14 @@ import com.example.kaumedicare.Medicine.repository.MedicineRepository;
 import com.example.kaumedicare.User.model.User;
 import com.example.kaumedicare.User.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,6 +37,7 @@ public class InventoryService {
     private final HealthFoodRepository healthFoodRepository;
     private final UserRepository userRepository;
     private final DurRepository durRepository;
+    private static final ZoneId KOREA_TIMEZONE = ZoneId.of("Asia/Seoul");
 
     @Transactional
     public InventoryResponse register(InventoryRequest request) {
@@ -98,12 +102,14 @@ public class InventoryService {
         }
     }
 
+    // 현재 활성화된 인벤토리 조회
     public List<InventoryResponse> getUserInventories(String kakaoId) {
-        return inventoryRepository.findByUserKakaoId(kakaoId).stream()
+        LocalDate today = LocalDate.now(KOREA_TIMEZONE);
+        return inventoryRepository.findCurrentInventoriesByKakaoId(kakaoId, today)
+                .stream()
                 .map(InventoryResponse::from)
                 .collect(Collectors.toList());
     }
-
     public List<InventoryResponse> getTodayInventories(String kakaoId) {
         DayOfWeek today = LocalDate.now().getDayOfWeek();
         return inventoryRepository.findByUserKakaoIdAndTakingDaysContaining(kakaoId, today)
@@ -121,15 +127,24 @@ public class InventoryService {
     @Transactional
     public void deleteInventory(String kakaoId, Long id) {
         Inventory inventory = findInventoryWithPermissionCheck(kakaoId, id);
+        LocalDate today = LocalDate.now(KOREA_TIMEZONE);
 
-        // 오늘 등록한 것인지 확인
-        if (inventory.getStartDate().equals(LocalDate.now())) {
-            // 오늘 등록한 약은 완전 삭제
+        // 이미 종료된 경우 체크
+        if (inventory.getEndDate() != null && !inventory.getEndDate().isAfter(today)) {
+            throw new IllegalStateException("이미 종료된 약입니다.");
+        }
+
+        // 시작일이 미래인 경우 완전 삭제
+        if (inventory.getStartDate().isAfter(today)) {
             inventoryRepository.deleteById(id);
-        } else {
-            // 이전에 등록한 약은 soft delete로 기록 유지
-            inventory.setEndDate(LocalDate.now());
+            return;
+        }
+
+        try {
+            inventory.setEndDate(today);
             inventoryRepository.save(inventory);
+        } catch (OptimisticLockingFailureException e) {
+            throw new ConcurrentModificationException("다른 사용자가 동시에 수정하고 있습니다. 다시 시도해주세요.");
         }
     }
 
@@ -160,18 +175,27 @@ public class InventoryService {
     @Transactional
     public void checkTaken(String kakaoId, Long id, LocalDate date, boolean taken) {
         Inventory inventory = findInventoryWithPermissionCheck(kakaoId, id);
+        LocalDate today = LocalDate.now(KOREA_TIMEZONE);
 
-        // endDate가 설정되어 있어도, date가 startDate와 endDate 사이에 있으면
-        // 복용 여부를 계속 수정할 수 있도록 함
-        if (isDateInRange(inventory, date)) {
+        // 미래 날짜 체크
+        if (date.isAfter(today)) {
+            throw new IllegalArgumentException("미래 날짜의 복용 여부는 수정할 수 없습니다.");
+        }
+
+        // 복용 가능 기간 체크
+        if (!isDateInRange(inventory, date)) {
+            throw new IllegalArgumentException("복용 기록을 수정할 수 없는 날짜입니다.");
+        }
+
+        try {
             if (taken) {
                 inventory.takeMedicine(date);
             } else {
                 inventory.cancelTakeMedicine(date);
             }
             inventoryRepository.save(inventory);
-        } else {
-            throw new IllegalArgumentException("복용 기록을 수정할 수 없는 날짜입니다.");
+        } catch (OptimisticLockingFailureException e) {
+            throw new ConcurrentModificationException("다른 사용자가 동시에 수정하고 있습니다. 다시 시도해주세요.");
         }
     }
 
@@ -195,9 +219,24 @@ public class InventoryService {
     }
 
     private boolean isDateInRange(Inventory inventory, LocalDate date) {
-        // startDate부터 endDate까지의 범위 체크
-        return !date.isBefore(inventory.getStartDate()) &&
-                (inventory.getEndDate() == null || !date.isAfter(inventory.getEndDate()));
+        LocalDate today = LocalDate.now(KOREA_TIMEZONE);
+
+        // 시작일 이전 체크
+        if (date.isBefore(inventory.getStartDate())) {
+            return false;
+        }
+
+        // 종료일 이후 체크 (종료일이 있는 경우)
+        if (inventory.getEndDate() != null && date.isAfter(inventory.getEndDate())) {
+            return false;
+        }
+
+        // 미래 날짜 체크
+        if (date.isAfter(today)) {
+            return false;
+        }
+
+        return true;
     }
 
     private Inventory findInventoryWithPermissionCheck(String kakaoId, Long id) {

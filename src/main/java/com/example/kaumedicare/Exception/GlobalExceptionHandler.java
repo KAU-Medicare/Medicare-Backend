@@ -97,5 +97,22 @@ public class GlobalExceptionHandler {
         private final String message;
     }
 
+    @ExceptionHandler(ConcurrentModificationException.class)
+    public ResponseEntity<ErrorResponse> handleConcurrentModification(ConcurrentModificationException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(e.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidDateException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidDate(InvalidDateException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(e.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(e.getMessage()));
+    }
 
 }

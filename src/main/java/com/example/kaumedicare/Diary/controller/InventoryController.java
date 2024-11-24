@@ -13,12 +13,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/inventory")
 @RequiredArgsConstructor
@@ -90,6 +92,20 @@ public class InventoryController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "복용 여부 체크", description = "특정 날짜의 약/영양제 복용 여부를 체크합니다.")
+    @PutMapping("/{kakaoId}/{id}/taken")
+    public ResponseEntity<Void> checkTaken(
+
+            @Parameter(description = "사용자 카카오 ID") @PathVariable String kakaoId,
+            @Parameter(description = "약/영양제 ID") @PathVariable Long id,
+            @Parameter(description = "복용 날짜 (yyyy-MM-dd)") @RequestParam LocalDate date,
+            @Parameter(description = "복용 여부 (true/false)") @RequestParam boolean taken
+    ) {
+        log.info("Check taken request - kakaoId: {}, id: {}", kakaoId, id);
+        inventoryService.checkTaken(kakaoId, id, date, taken);
+        return ResponseEntity.ok().build();
+    }
+
     @Operation(summary = "약/영양제 삭제", description = "등록된 약/영양제를 삭제합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "삭제 성공"),
@@ -101,6 +117,7 @@ public class InventoryController {
             @Parameter(description = "사용자 카카오 ID") @PathVariable String kakaoId,
             @Parameter(description = "약/영양제 ID") @PathVariable Long id
     ) {
+        log.info("Delete request - kakaoId: {}, id: {}", kakaoId, id);
         inventoryService.deleteInventory(kakaoId, id);
         return ResponseEntity.ok().build();
     }
@@ -133,17 +150,7 @@ public class InventoryController {
         return ResponseEntity.ok(inventoryService.updateInventory(kakaoId, id, request));
     }
 
-    @Operation(summary = "복용 여부 체크", description = "특정 날짜의 약/영양제 복용 여부를 체크합니다.")
-    @PutMapping("/{kakaoId}/{id}/taken")
-    public ResponseEntity<Void> checkTaken(
-            @Parameter(description = "사용자 카카오 ID") @PathVariable String kakaoId,
-            @Parameter(description = "약/영양제 ID") @PathVariable Long id,
-            @Parameter(description = "복용 날짜 (yyyy-MM-dd)") @RequestParam LocalDate date,
-            @Parameter(description = "복용 여부 (true/false)") @RequestParam boolean taken
-    ) {
-        inventoryService.checkTaken(kakaoId, id, date, taken);
-        return ResponseEntity.ok().build();
-    }
+
 
     @Operation(summary = "특정 날짜의 복용 목록 조회", description = "특정 날짜에 복용해야 하는 약/영양제 목록을 조회합니다.")
     @ApiResponses(value = {
