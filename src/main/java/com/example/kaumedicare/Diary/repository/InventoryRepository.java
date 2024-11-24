@@ -25,5 +25,6 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     List<Inventory> findCurrentInventoriesByKakaoId(
             @Param("kakaoId") String kakaoId,
             @Param("referenceDate") LocalDate referenceDate
+
     );
 }
