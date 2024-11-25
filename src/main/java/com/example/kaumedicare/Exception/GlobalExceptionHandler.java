@@ -88,15 +88,6 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(e.getMessage()));
     }
 
-    /**
-     * 에러 응답을 위한 내부 클래스
-     */
-    @Getter
-    @AllArgsConstructor
-    static class ErrorResponse {
-        private final String message;
-    }
-
     @ExceptionHandler(ConcurrentModificationException.class)
     public ResponseEntity<ErrorResponse> handleConcurrentModification(ConcurrentModificationException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -113,6 +104,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse(e.getMessage()));
+    }
+
+    /**
+     * 에러 응답을 위한 내부 클래스
+     */
+    @Getter
+    @AllArgsConstructor
+    static class ErrorResponse {
+        private final String message;
     }
 
 }

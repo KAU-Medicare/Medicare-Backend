@@ -34,12 +34,12 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class InventoryService {
+    private static final ZoneId KOREA_TIMEZONE = ZoneId.of("Asia/Seoul");
     private final InventoryRepository inventoryRepository;
     private final MedicineRepository medicineRepository;
     private final HealthFoodRepository healthFoodRepository;
     private final UserRepository userRepository;
     private final DurRepository durRepository;
-    private static final ZoneId KOREA_TIMEZONE = ZoneId.of("Asia/Seoul");
 
     @Transactional
     public InventoryResponse register(InventoryRequest request) {
@@ -217,10 +217,8 @@ public class InventoryService {
         if (date.isBefore(inventory.getStartDate())) {
             return false; // 시작일 이전은 제외
         }
-        if (inventory.getEndDate() != null && date.isAfter(inventory.getEndDate())) {
-            return false; // 종료일 이후는 제외
-        }
-        return true; // 시작일과 종료일 사이 포함
+        return inventory.getEndDate() == null || !date.isAfter(inventory.getEndDate()); // 종료일 이후는 제외
+// 시작일과 종료일 사이 포함
     }
 
 

@@ -81,6 +81,9 @@ public class Inventory {
     )
     @MapKeyColumn(name = "taken_records_key")
     private Map<LocalDate, TakenRecord> takenRecords = new HashMap<>();
+    // 낙관적 락을 위한 버전 필드 추가
+    @Version
+    private Long version = 0L;  // 초기값 설정
 
     @Builder
     public Inventory(Long id, User user, Medicine medicine, HealthFood healthFood,
@@ -162,10 +165,6 @@ public class Inventory {
     public void updateUseNotification(Boolean useNotification) {
         this.useNotification = useNotification;
     }
-
-    // 낙관적 락을 위한 버전 필드 추가
-    @Version
-    private Long version = 0L;  // 초기값 설정
 
     @PrePersist
     @PreUpdate
