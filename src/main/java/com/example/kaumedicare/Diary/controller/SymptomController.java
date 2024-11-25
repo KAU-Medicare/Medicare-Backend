@@ -58,4 +58,5 @@ public class SymptomController {
         symptomService.deleteSymptom(id);
         return ResponseEntity.ok().build();
     }
+
 }
