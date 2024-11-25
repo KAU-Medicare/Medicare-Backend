@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface StandardCodeRepository extends JpaRepository<StandardCode, Long> {
     Optional<StandardCode> findByStandardCode(String standardCode);
+    boolean existsByStandardCode(String standardCode);
 }
