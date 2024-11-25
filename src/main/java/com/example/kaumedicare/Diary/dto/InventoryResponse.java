@@ -1,13 +1,13 @@
 package com.example.kaumedicare.Diary.dto;
 
 import com.example.kaumedicare.Diary.model.Inventory;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,15 +23,13 @@ public class InventoryResponse {
     private MedicineType type;
     private Integer capsuleCount;
     private Boolean useNotification;
-
-    @JsonFormat(pattern = "HH:mm:ss")
     private LocalTime takingTime;
-
     private List<DayOfWeek> takingDays;
     private boolean taken;
+    private LocalDate startDate;  // 추가
+    private LocalDate endDate;    // 추가
 
     public static InventoryResponse from(Inventory inventory) {
-        // null 체크를 포함한 안전한 변환
         return InventoryResponse.builder()
                 .id(inventory.getId())
                 .itemName(getItemNameSafely(inventory))
@@ -43,7 +41,9 @@ public class InventoryResponse {
                 .takingDays(inventory.getTakingDays() != null ?
                         new ArrayList<>(inventory.getTakingDays()) :
                         new ArrayList<>())
-                .taken(false)  // 새로 등록시에는 기본적으로 false
+                .taken(false)
+                .startDate(inventory.getStartDate())  // 추가
+                .endDate(inventory.getEndDate())      // 추가
                 .build();
     }
 

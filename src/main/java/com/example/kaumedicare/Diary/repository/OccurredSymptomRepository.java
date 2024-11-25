@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface OccurredSymptomRepository extends JpaRepository<OccurredSymptom, Long> {
     List<OccurredSymptom> findByDiaryUserKakaoIdAndDiaryDate(String kakaoId, LocalDate date);
+
+    long countByDiaryId(Long diaryId);
 }

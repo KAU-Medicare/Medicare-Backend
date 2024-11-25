@@ -52,6 +52,7 @@ public class InventoryService {
             throw new IllegalArgumentException("시작일은 미래 날짜가 될 수 없습니다.");
         }
 
+        // DUR 확인 (약물인 경우에만)
         if (request.getType() == MedicineType.MEDICINE) {
             checkDURConflict(request.getItemId(), request.getKakaoId());
         }
@@ -79,8 +80,8 @@ public class InventoryService {
                 .useNotification(request.getUseNotification())
                 .takingTime(request.getTakingTime())
                 .takingDays(request.getTakingDays())
-                .startDate(request.getStartDate())    // 시작일 설정
-                .endDate(request.getEndDate())        // 종료일 설정
+                .startDate(request.getStartDate())
+                .endDate(request.getEndDate())
                 .build();
 
         Inventory savedInventory = inventoryRepository.save(inventory);
@@ -97,7 +98,7 @@ public class InventoryService {
 
         for (Inventory inv : userMedicines) {
             if (inv.getMedicine() != null &&
-                    durRepository.existsByTargetMedicineAndDurMedicine(newMedicine, inv.getMedicine())) {
+                    durRepository.existsDurConflictByIds(newMedicine.getId(), inv.getMedicine().getId())) {
                 throw new DURConflictException(
                         String.format("병용금기 약물이 존재합니다: %s", inv.getMedicine().getItemName()));
             }

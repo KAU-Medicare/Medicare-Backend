@@ -60,9 +60,32 @@ public class InventoryController {
     }
 
     @Operation(summary = "사용자의 모든 약/영양제 조회", description = "특정 사용자의 모든 약/영양제 목록을 조회합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "조회 성공")
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "조회 성공",
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = {
+                            @ExampleObject(
+                                    value = """
+                                            [{
+                                                "id": 1,
+                                                "itemName": "활명수",
+                                                "nickname": "활명수별명",
+                                                "type": "MEDICINE",
+                                                "capsuleCount": 2,
+                                                "useNotification": true,
+                                                "takingTime": "12:00:00",
+                                                "takingDays": ["MONDAY"],
+                                                "taken": false,
+                                                "startDate": "2024-11-23",
+                                                "endDate": null
+                                            }]
+                                            """
+                            )
+                    }
+            )
+    )
     @GetMapping("/user/{kakaoId}")
     public ResponseEntity<List<InventoryResponse>> getUserInventories(
             @Parameter(description = "사용자 카카오 ID") @PathVariable String kakaoId

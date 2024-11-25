@@ -7,7 +7,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,7 +36,13 @@ public class OccurredSymptom {
     private List<Symptom> symptoms = new ArrayList<>();
 
     @Column(nullable = false)
-    private LocalDateTime occurredDateTime;
+    private LocalDate occurredDate;
+
+    @Column(nullable = false)
+    private LocalTime startTime;
+
+    @Column(nullable = false)
+    private LocalTime endTime;
 
     @Column(name = "base64Image")
     private String base64Image;
@@ -49,8 +56,16 @@ public class OccurredSymptom {
         this.symptoms = symptoms;
     }
 
-    public void updateOccurredDateTime(LocalDateTime occurredDateTime) {
-        this.occurredDateTime = occurredDateTime;
+    public void updateOccurredDate(LocalDate occurredDate) {
+        this.occurredDate = occurredDate;
+    }
+
+    public void updateStartTime(LocalTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public void updateEndTime(LocalTime endTime) {
+        this.endTime = endTime;
     }
 
     public void updateImageUrl(String base64Image) {

@@ -5,7 +5,8 @@ import com.example.kaumedicare.Diary.model.Symptom;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -13,8 +14,10 @@ import java.util.stream.Collectors;
 @Builder
 public class OccurredSymptomResponse {
     private Long id;
-    private List<String> symptomNames;  // 여러 증상 이름
-    private LocalDateTime occurredDateTime;
+    private List<String> symptomNames;
+    private LocalDate occurredDate;
+    private LocalTime startTime;
+    private LocalTime endTime;
     private String base64Image;
 
     public static OccurredSymptomResponse from(OccurredSymptom occurredSymptom) {
@@ -23,7 +26,9 @@ public class OccurredSymptomResponse {
                 .symptomNames(occurredSymptom.getSymptoms().stream()
                         .map(Symptom::getName)
                         .collect(Collectors.toList()))
-                .occurredDateTime(occurredSymptom.getOccurredDateTime())
+                .occurredDate(occurredSymptom.getOccurredDate())
+                .startTime(occurredSymptom.getStartTime())
+                .endTime(occurredSymptom.getEndTime())
                 .base64Image(occurredSymptom.getBase64Image())
                 .build();
     }
