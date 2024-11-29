@@ -25,4 +25,14 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
             @Param("referenceDate") LocalDate referenceDate
     );
 
+    @Query("SELECT i FROM Inventory i " +
+            "WHERE i.user.kakaoId = :kakaoId " +
+            "AND i.type = :type " +
+            "AND (i.endDate IS NULL OR i.endDate >= :startDate)")
+    List<Inventory> findInventoriesActiveAfterStartDate(
+            @Param("kakaoId") String kakaoId,
+            @Param("type") MedicineType type,
+            @Param("startDate") LocalDate startDate
+    );
+
 }
