@@ -1,0 +1,36 @@
+package com.example.kaumedicare.AllergyInference.model;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "analysis_reasons")
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class AnalysisReason {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "analysis_id")
+    private AllergyAnalysis analysis;
+
+    @Column(nullable = false)
+    private Integer reasonNumber;  // 1, 2, 3
+
+    @Column(nullable = false, length = 500)
+    private String reasonDescription;
+
+    @Column(nullable = false)
+    private String relevance;  // '관련성 높음', '관련성 보통', '관련성 낮음'
+}
