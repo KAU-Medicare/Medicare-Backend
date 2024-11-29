@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,10 @@ public class AllergyAnalysis {
     private String allergyInfo;
 
     @Column(nullable = false)
-    private LocalDateTime analysisDate;
+    private LocalDate occurredDate;  // 알레르기 발생일
+
+    @Column(nullable = false)
+    private LocalDateTime analysisDate;  // 분석 수행일
 
     @OneToMany(mappedBy = "analysis", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SuspectedMedication> suspectedMedications = new ArrayList<>();
