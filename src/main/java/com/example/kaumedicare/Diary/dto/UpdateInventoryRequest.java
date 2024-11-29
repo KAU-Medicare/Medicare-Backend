@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -19,4 +20,6 @@ public class UpdateInventoryRequest {
     private Boolean useNotification;
     private LocalTime takingTime;
     private List<DayOfWeek> takingDays;
+    private LocalDate startDate;
+    private LocalDate endDate;
 }

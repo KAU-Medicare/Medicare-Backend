@@ -153,14 +153,16 @@ public class InventoryController {
                     @ExampleObject(
                             name = "수정 예시",
                             value = """
-                                    {
-                                        "nickname": "활명수",
-                                        "capsuleCount": 2,
-                                        "useNotification": true,
-                                        "takingTime": "12:00:00",
-                                        "takingDays": ["MONDAY"]
-                                    }
-                                    """
+                                {
+                                    "nickname": "활명수별명",
+                                    "capsuleCount": 2,
+                                    "useNotification": true,
+                                    "takingTime": "12:00:00",
+                                    "takingDays": ["MONDAY"],
+                                    "startDate": "2024-11-23",
+                                    "endDate": null
+                                }
+                                """
                     )
             })
     )

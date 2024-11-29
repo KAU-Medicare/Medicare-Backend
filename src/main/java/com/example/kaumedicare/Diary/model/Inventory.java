@@ -166,6 +166,14 @@ public class Inventory {
         this.useNotification = useNotification;
     }
 
+    public void updateStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public void updateEndDate(LocalDate endDate) {
+        this.endDate = endDate;
+    }
+
     @PrePersist
     @PreUpdate
     private void validateDates() {

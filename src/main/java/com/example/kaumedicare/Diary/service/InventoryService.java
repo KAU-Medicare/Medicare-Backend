@@ -152,7 +152,10 @@ public class InventoryService {
     public InventoryResponse updateInventory(String kakaoId, Long id, UpdateInventoryRequest request) {
         Inventory inventory = findInventoryWithPermissionCheck(kakaoId, id);
 
-        // 수정할 필드들만 업데이트
+        // 시작일과 종료일 검증
+        validateDateRange(request.getStartDate(), request.getEndDate(), inventory);
+
+        // 수정할 필드들 업데이트
         if (request.getNickname() != null) {
             inventory.updateNickname(request.getNickname());
         }
@@ -167,6 +170,12 @@ public class InventoryService {
         }
         if (request.getUseNotification() != null) {
             inventory.updateUseNotification(request.getUseNotification());
+        }
+        if (request.getStartDate() != null) {
+            inventory.updateStartDate(request.getStartDate());
+        }
+        if (request.getEndDate() != null) {
+            inventory.updateEndDate(request.getEndDate());
         }
 
         return InventoryResponse.from(inventory);
@@ -219,9 +228,29 @@ public class InventoryService {
             return false; // 시작일 이전은 제외
         }
         return inventory.getEndDate() == null || !date.isAfter(inventory.getEndDate()); // 종료일 이후는 제외
-// 시작일과 종료일 사이 포함
     }
 
+    private void validateDateRange(LocalDate newStartDate, LocalDate newEndDate, Inventory inventory) {
+        // 새로운 시작일이 있는 경우
+        if (newStartDate != null) {
+            // 새로운 종료일이 있는 경우
+            if (newEndDate != null && newStartDate.isAfter(newEndDate)) {
+                throw new IllegalArgumentException("시작일은 종료일보다 늦을 수 없습니다.");
+            }
+            // 기존 종료일이 있는 경우
+            else if (inventory.getEndDate() != null && newStartDate.isAfter(inventory.getEndDate())) {
+                throw new IllegalArgumentException("시작일은 종료일보다 늦을 수 없습니다.");
+            }
+        }
+
+        // 새로운 종료일이 있는 경우
+        if (newEndDate != null) {
+            // 기존 시작일과 비교
+            if (newEndDate.isBefore(inventory.getStartDate())) {
+                throw new IllegalArgumentException("종료일은 시작일보다 빠를 수 없습니다.");
+            }
+        }
+    }
 
     private Inventory findInventoryWithPermissionCheck(String kakaoId, Long id) {
         Inventory inventory = inventoryRepository.findById(id)
