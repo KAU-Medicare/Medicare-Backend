@@ -118,4 +118,19 @@ public class AllergyInferenceService {
 
         return response;
     }
+
+
+    @Transactional
+    public void deleteAnalysis(String kakaoId, Long analysisId) {
+        // 해당 분석 결과 조회
+        AllergyAnalysis analysis = allergyAnalysisRepository.findById(analysisId)
+                .orElseThrow(() -> new RuntimeException("Analysis not found"));
+
+        // 요청한 사용자와 분석 결과의 소유자가 일치하는지 확인
+        if (!analysis.getUser().getKakaoId().equals(kakaoId)) {
+            throw new RuntimeException("Not authorized to delete this analysis");
+        }
+
+        allergyAnalysisRepository.delete(analysis);
+    }
 }

@@ -35,4 +35,12 @@ public class AllergyInferenceController {
         Map result = allergyInferenceService.getAnalysisResult(kakaoId, occurredDate);
         return ResponseEntity.ok(result);
     }
+
+    @DeleteMapping("/{analysisId}")
+    public ResponseEntity<Void> deleteAnalysis(
+            @RequestParam String kakaoId,
+            @PathVariable Long analysisId) {
+        allergyInferenceService.deleteAnalysis(kakaoId, analysisId);
+        return ResponseEntity.noContent().build();
+    }
 }
