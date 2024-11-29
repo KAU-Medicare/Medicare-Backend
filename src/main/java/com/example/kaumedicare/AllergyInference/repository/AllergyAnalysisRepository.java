@@ -5,10 +5,11 @@ import com.example.kaumedicare.User.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface AllergyAnalysisRepository extends JpaRepository<AllergyAnalysis, Long> {
-    List<AllergyAnalysis> findByUserOrderByAnalysisDateDesc(User user);
-    // 필요하다면 다른 쿼리 메서드도 추가할 수 있습니다
+    Optional<AllergyAnalysis> findByUserAndOccurredDate(User user, LocalDate occurredDate);
 }

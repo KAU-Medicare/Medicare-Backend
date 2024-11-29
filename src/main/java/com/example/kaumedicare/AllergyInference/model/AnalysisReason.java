@@ -26,11 +26,11 @@ public class AnalysisReason {
     private AllergyAnalysis analysis;
 
     @Column(nullable = false)
-    private Integer reasonNumber;  // 1, 2, 3
+    private Integer reasonNumber;
 
     @Column(nullable = false, length = 500)
     private String reasonDescription;
 
     @Column(nullable = false)
-    private String relevance;  // '관련성 높음', '관련성 보통', '관련성 낮음'
+    private String relevance;
 }

@@ -8,14 +8,17 @@ import com.example.kaumedicare.User.model.User;
 import com.example.kaumedicare.User.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class AllergyInferenceService {
     private final WebClient webClient;
     private final AllergyAnalysisRepository allergyAnalysisRepository;
@@ -31,22 +34,43 @@ public class AllergyInferenceService {
     }
 
     public Mono<Map> analyzeAllergy(String kakaoId, Map<String, Object> requestBody) {
+        // 이미 분석 결과가 있는지 확인
+        LocalDate occurredDate = LocalDate.parse((String) requestBody.get("occurred_date"));
+        User user = userRepository.findById(kakaoId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Optional<AllergyAnalysis> existingAnalysis = allergyAnalysisRepository.findByUserAndOccurredDate(user, occurredDate);
+        if (existingAnalysis.isPresent()) {
+            return Mono.just(convertToResponseMap(existingAnalysis.get()));
+        }
+
+        // 새로운 분석 수행
         return webClient.post()
                 .uri("")
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(Map.class)
-                .map(response -> saveAnalysisResult(kakaoId, response, requestBody));
+                .map(response -> saveAnalysisResult(kakaoId, response, requestBody, occurredDate));
     }
 
-    private Map saveAnalysisResult(String kakaoId, Map response, Map<String, Object> requestBody) {
+    public Map getAnalysisResult(String kakaoId, LocalDate occurredDate) {
         User user = userRepository.findById(kakaoId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // AllergyAnalysis 생성
+        AllergyAnalysis analysis = allergyAnalysisRepository.findByUserAndOccurredDate(user, occurredDate)
+                .orElseThrow(() -> new RuntimeException("Analysis not found"));
+
+        return convertToResponseMap(analysis);
+    }
+
+    private Map saveAnalysisResult(String kakaoId, Map response, Map<String, Object> requestBody, LocalDate occurredDate) {
+        User user = userRepository.findById(kakaoId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         AllergyAnalysis analysis = AllergyAnalysis.builder()
                 .user(user)
                 .allergyInfo((String) requestBody.get("allergy_info"))
+                .occurredDate(occurredDate)
                 .analysisDate(LocalDateTime.now())
                 .build();
 
@@ -76,6 +100,26 @@ public class AllergyInferenceService {
         }
 
         allergyAnalysisRepository.save(analysis);
-        return response;  // 원본 응답 반환
+        return response;
+    }
+
+    private Map convertToResponseMap(AllergyAnalysis analysis) {
+        Map<String, Object> response = new HashMap<>();
+
+        // 의심되는 약물 목록
+        List<String> result = analysis.getSuspectedMedications().stream()
+                .map(SuspectedMedication::getMedicationName)
+                .collect(Collectors.toList());
+        response.put("result", result);
+
+        // 원인 분석
+        Map<String, List<String>> causes = new HashMap<>();
+        analysis.getAnalysisReasons().forEach(reason -> {
+            String key = "reason" + reason.getReasonNumber();
+            causes.put(key, Arrays.asList(reason.getReasonDescription(), reason.getRelevance()));
+        });
+        response.put("cause", causes);
+
+        return response;
     }
 }
