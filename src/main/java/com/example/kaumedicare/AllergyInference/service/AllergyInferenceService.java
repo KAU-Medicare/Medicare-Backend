@@ -18,7 +18,7 @@ public class AllergyInferenceService {
 
     public Mono<Map> analyzeAllergy(Map<String, Object> requestBody) {
         return webClient.post()
-                .uri("/analyze_allergy")
+                .uri("")
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(Map.class);
