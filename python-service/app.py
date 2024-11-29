@@ -7,13 +7,17 @@ import json
 from datetime import datetime
 from itertools import combinations
 import os
+import httpx
 
 app = Flask(__name__)
 CORS(app)
 
 # OpenAI 설정
 load_dotenv()
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+client = OpenAI(
+    api_key=os.getenv('OPENAI_API_KEY'),
+    http_client=httpx.Client()
+)
 app.json.ensure_ascii = False
 
 # 모자이크 설정
