@@ -31,14 +31,16 @@ public class AllergyAnalysis {
     private String allergyInfo;
 
     @Column(nullable = false)
-    private LocalDate occurredDate;  // 알레르기 발생일
+    private LocalDate occurredDate;
 
     @Column(nullable = false)
-    private LocalDateTime analysisDate;  // 분석 수행일
+    private LocalDateTime analysisDate;
 
+    @Builder.Default  // 이 부분 추가
     @OneToMany(mappedBy = "analysis", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SuspectedMedication> suspectedMedications = new ArrayList<>();
 
+    @Builder.Default  // 이 부분 추가
     @OneToMany(mappedBy = "analysis", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AnalysisReason> analysisReasons = new ArrayList<>();
 }
