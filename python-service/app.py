@@ -3,6 +3,10 @@ from flask_cors import CORS
 import cv2, numpy as np, os, dlib, base64
 from openai import OpenAI
 from dotenv import load_dotenv
+import json
+from datetime import datetime
+from itertools import combinations
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -241,6 +245,108 @@ def process_image(input_image_path, output_image_path):
         print("Error: Failed to save the image.")
     return unique_output_path
 
+
+# 알레르기 추론
+def parse_date(date_str):
+    # 문자열 형식의 날짜를 datetime 객체로 변환
+    return datetime.strptime(date_str, "%Y.%m.%d")
+
+def analyze_allergy(allergy_info, medication_history):
+    # 복용 이력을 날짜 순으로 정렬
+    medication_history.sort(key=lambda x: parse_date(x['date']))
+    new_medications = set() # 알레르기 발생시 전에 먹지 않은 약물
+    new_combinations = set() # 알레르기 발생시 전에 없던 조합
+    previous_medications = set() # 이전에 복용한 약물
+
+    for entry in medication_history:
+        current_meds = set(entry['medications']) # 현재 복용 중인 약물 집합 생성
+        if entry['allergy']:
+            # 케이스 1: 새로운 약물
+            new_meds = current_meds - previous_medications # 이전에 복용하지 않은 약물 찾기
+            if new_meds:
+                return generate_gpt_response(1, allergy_info, list(new_meds), medication_history)
+            
+            # 케이스 2: 새로운 조합
+            for combo in [frozenset(combo) for combo in combinations(current_meds, 2)]: 
+                if combo not in new_combinations: # 새로운 조합이 이전에 없던 경우
+                    return generate_gpt_response(2, allergy_info, list(combo), medication_history)
+            
+            # 케이스 3: 이전에 문제없던 약물
+            if current_meds.issubset(previous_medications): # 현재 복용 중인 약물이 모두 이전에 복용한 경우
+                return generate_gpt_response(3, allergy_info, list(current_meds), medication_history)
+            
+            # 케이스 4: 기타 경우
+            return generate_gpt_response(4, allergy_info, list(current_meds), medication_history)
+        
+        previous_medications.update(current_meds) 
+        new_combinations.update([frozenset(combo) for combo in combinations(current_meds, 2)])
+
+    # 알레르기가 발생하지 않은 경우
+    return generate_gpt_response(4, allergy_info, [], medication_history)
+
+def generate_gpt_response(case, allergy_info, suspected_allergens, medication_history):
+    if case == 1:
+        user_message = f"""
+        발생한 알레르기: {allergy_info}
+        처음 복용한 약물: {', '.join(suspected_allergens)}
+        최근 5일간 복용 정보:
+        {json.dumps(medication_history, ensure_ascii=False, indent=2)}
+
+        위 정보를 바탕으로 새로 복용한 약물이 알레르기의 원인일 가능성과 그 이유를 설명해주세요.
+        """
+    elif case == 2:
+        user_message = f"""
+        발생한 알레르기: {allergy_info}
+        새로운 약물 조합: {' 및 '.join(suspected_allergens)}
+        최근 5일간 복용 정보:
+        {json.dumps(medication_history, ensure_ascii=False, indent=2)}
+
+        위 정보를 바탕으로 새로운 약물 조합이 알레르기의 원인일 가능성과 그 이유를 설명해주세요.
+        """
+    elif case == 3:
+        user_message = f"""
+        발생한 알레르기: {allergy_info}
+        이전에 안전하게 복용했던 약물: {', '.join(suspected_allergens)}
+        최근 5일간 복용 정보:
+        {json.dumps(medication_history, ensure_ascii=False, indent=2)}
+
+        위 정보를 바탕으로 이전에 안전했던 약물이 알레르기를 유발한 이유와 다른 가능성에 대해 설명해주세요.
+        """
+    else:
+        user_message = f"""
+        발생한 알레르기: {allergy_info}
+        최근 5일간 복용 정보:
+        {json.dumps(medication_history, ensure_ascii=False, indent=2)}
+
+        위 정보를 바탕으로 알레르기의 가능한 원인과 이유를 설명해주세요.
+        """
+
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": (
+                "당신은 의약품 및 영양제에 대한 전문 지식을 가진 AI 건강 보조 도우미입니다. "
+                "제공된 정보를 바탕으로 알레르기 원인을 추론하고, 이를 JSON 형식으로 출력해야 합니다. "
+                "출력 형식은 다음과 같아야 합니다: "
+                "{"
+                "  \"result\": \"의심되는 약물 또는 영양제 목록\", "
+                "  \"cause\": {"
+                "    \"reason1\": [\"이유1\", \"관련성\"], "
+                "    \"reason2\": [\"이유2\", \"관련성\"], "
+                "    \"reason3\": [\"이유3\", \"관련성\"]"
+                "  }"
+                "}"
+                "이유는 최대 3가지까지만 간단 명료하게 작성하세요."
+                "이 때 해당 의약품 및 영양제 혹은 의약품 및 영양제 조합이 발생한 알레르기의 원인이 될 수 있는지도 이유에 포함되어야합니다. 이 때 연관성이 적은 부작용이라면 그것을 언급하고 관련된 답변을 해줘야합니다."
+                "이유를 명시할 때 마지막에 관련성에 대해서 (관련성 높음), (관련성 보통), (관련성 낮음)을 문구로 표시해줘."
+            )},
+            {"role": "user", "content": user_message}
+        ],
+        response_format={"type": "json_object"}
+    )
+
+    return completion.choices[0].message.content
+
 # 라우트 설정
 @app.route('/')
 def health_check():
@@ -272,6 +378,14 @@ def mosaic_image():
         os.remove(processed_path)
 
         return jsonify({'processed_image': encoded_string})
+
+@app.route('/analyze_allergy', methods=['POST'])
+def analyze_allergy_route():
+    data = request.json
+    allergy_info = data['allergy_info']
+    medication_history = data['medication_history']
+    result = analyze_allergy(allergy_info, medication_history)
+    return jsonify(json.loads(result))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
