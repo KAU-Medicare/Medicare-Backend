@@ -54,7 +54,7 @@ public class InventoryService {
 
         // DUR 확인 (약물인 경우에만)
         if (request.getType() == MedicineType.MEDICINE) {
-            checkDURConflict(request.getItemId(), request.getKakaoId());
+            checkDURConflict(request.getItemId(), request.getKakaoId(), request.getStartDate());
         }
 
         Medicine medicine = null;
@@ -88,15 +88,20 @@ public class InventoryService {
         return InventoryResponse.from(savedInventory);
     }
 
-    private void checkDURConflict(Long newMedicineId, String kakaoId) {
+    private void checkDURConflict(Long newMedicineId, String kakaoId, LocalDate startDate) {
         Medicine newMedicine = medicineRepository.findById(newMedicineId)
                 .orElseThrow(() -> new EntityNotFoundException(
                         String.format("Medicine not found with id: %d", newMedicineId)));
 
-        List<Inventory> userMedicines = inventoryRepository
-                .findByUserKakaoIdAndType(kakaoId, MedicineType.MEDICINE);
+        // 새로운 약의 시작일 기준으로 유효한 약품 조회
+        List<Inventory> userActiveMedicines = inventoryRepository
+                .findInventoriesActiveAfterStartDate(
+                        kakaoId,
+                        MedicineType.MEDICINE,
+                        startDate
+                );
 
-        for (Inventory inv : userMedicines) {
+        for (Inventory inv : userActiveMedicines) {
             if (inv.getMedicine() != null &&
                     durRepository.existsDurConflictByIds(newMedicine.getId(), inv.getMedicine().getId())) {
                 throw new DURConflictException(

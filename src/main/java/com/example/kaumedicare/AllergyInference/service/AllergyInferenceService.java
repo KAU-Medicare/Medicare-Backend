@@ -23,7 +23,6 @@ public class AllergyInferenceService {
     private final WebClient webClient;
     private final AllergyAnalysisRepository allergyAnalysisRepository;
     private final UserRepository userRepository;
-
     public AllergyInferenceService(
             @Value("${allergyinference.server.url}") String allergyInferenceUrl,
             AllergyAnalysisRepository allergyAnalysisRepository,
@@ -33,9 +32,7 @@ public class AllergyInferenceService {
         this.userRepository = userRepository;
     }
 
-    public Mono<Map> analyzeAllergy(String kakaoId, Map<String, Object> requestBody) {
-        // 이미 분석 결과가 있는지 확인
-        LocalDate occurredDate = LocalDate.parse((String) requestBody.get("occurred_date"));
+    public Mono<Map> analyzeAllergy(String kakaoId, LocalDate occurredDate, Map<String, Object> requestBody) {
         User user = userRepository.findById(kakaoId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -44,7 +41,6 @@ public class AllergyInferenceService {
             return Mono.just(convertToResponseMap(existingAnalysis.get()));
         }
 
-        // 새로운 분석 수행
         return webClient.post()
                 .uri("")
                 .bodyValue(requestBody)

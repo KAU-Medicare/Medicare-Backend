@@ -21,8 +21,9 @@ public class AllergyInferenceController {
     @PostMapping("/analyze")
     public Mono<ResponseEntity<Map>> analyzeAllergy(
             @RequestParam String kakaoId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate occurredDate,
             @RequestBody Map<String, Object> requestBody) {
-        return allergyInferenceService.analyzeAllergy(kakaoId, requestBody)
+        return allergyInferenceService.analyzeAllergy(kakaoId, occurredDate, requestBody)
                 .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
