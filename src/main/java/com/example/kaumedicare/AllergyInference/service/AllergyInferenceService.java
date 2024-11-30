@@ -23,6 +23,7 @@ public class AllergyInferenceService {
     private final WebClient webClient;
     private final AllergyAnalysisRepository allergyAnalysisRepository;
     private final UserRepository userRepository;
+
     public AllergyInferenceService(
             @Value("${allergyinference.server.url}") String allergyInferenceUrl,
             AllergyAnalysisRepository allergyAnalysisRepository,
