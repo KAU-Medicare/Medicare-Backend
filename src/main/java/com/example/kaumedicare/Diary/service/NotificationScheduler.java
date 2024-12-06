@@ -1,0 +1,75 @@
+package com.example.kaumedicare.Diary.service;
+
+import com.example.kaumedicare.Diary.model.Inventory;
+import com.example.kaumedicare.Diary.model.PushSubscription;
+import com.example.kaumedicare.Diary.repository.InventoryRepository;
+import com.example.kaumedicare.Diary.repository.PushSubscriptionRepository;
+import com.example.kaumedicare.User.model.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import nl.martijndwars.webpush.Notification;
+import nl.martijndwars.webpush.PushService;
+import nl.martijndwars.webpush.Subscription;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.example.kaumedicare.Diary.dto.InventoryResponse.getItemNameSafely;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class NotificationScheduler {
+    private final PushService pushService;
+    private final InventoryRepository inventoryRepository;
+    private final PushSubscriptionRepository subscriptionRepository;
+
+    @Scheduled(cron = "0 * * * * *") // 매분 실행
+    public void checkAndSendNotifications() {
+        LocalTime now = LocalTime.now();
+        LocalDate today = LocalDate.now();
+        DayOfWeek currentDay = today.getDayOfWeek();
+
+        List<Inventory> inventoriesToNotify = inventoryRepository
+                .findByUseNotificationTrueAndTakingTimeAndTakingDaysContaining(now, currentDay);
+
+        for (Inventory inventory : inventoriesToNotify) {
+            User user = inventory.getUser();
+            List<PushSubscription> subscriptions = subscriptionRepository
+                    .findByUser(user);
+
+            for (PushSubscription subscription : subscriptions) {
+                try {
+                    String payload = createNotificationPayload(inventory);
+
+                    Subscription sub = new Subscription(
+                            subscription.getEndpoint(),
+                            new Subscription.Keys(subscription.getP256dh(), subscription.getAuth())
+                    );
+
+                    pushService.send(new Notification(sub, payload));
+                } catch (Exception e) {
+                    log.error("Failed to send notification", e);
+                }
+            }
+        }
+    }
+
+    private String createNotificationPayload(Inventory inventory) throws JsonProcessingException {
+        Map<String, String> payload = new HashMap<>();
+        payload.put("title", "복약 알림");
+        payload.put("body", String.format("%s 복용 시간입니다.",
+                inventory.getNickname() != null ? inventory.getNickname() : getItemNameSafely(inventory)));
+        payload.put("icon", "/icons/medicine-icon.png");
+
+        return new ObjectMapper().writeValueAsString(payload);
+    }
+}

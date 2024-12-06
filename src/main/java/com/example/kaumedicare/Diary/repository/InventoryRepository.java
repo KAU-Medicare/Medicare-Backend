@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Repository
@@ -34,5 +35,9 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
             @Param("type") MedicineType type,
             @Param("startDate") LocalDate startDate
     );
+
+    @Query("SELECT i FROM Inventory i WHERE i.useNotification = true AND i.takingTime = :time AND :dayOfWeek MEMBER OF i.takingDays")
+    List<Inventory> findByUseNotificationTrueAndTakingTimeAndTakingDaysContaining(
+            LocalTime time, DayOfWeek dayOfWeek);
 
 }
