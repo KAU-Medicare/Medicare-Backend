@@ -44,7 +44,7 @@ public class OccurredSymptom {
     @Column(nullable = false)
     private LocalTime endTime;
 
-    @Column(name = "base64Image")
+    @Column(name = "base64Image", columnDefinition = "CLOB")
     private String base64Image;
 
     // 증상 추가 메서드
