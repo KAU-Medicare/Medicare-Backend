@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -88,6 +89,38 @@ public class SymptomController {
         return ResponseEntity.ok(symptomService.getSymptomsByDate(kakaoId, date));
     }
 
+    @Operation(summary = "기간별 알레르기 정보 조회")
+    @ApiResponse(
+            responseCode = "200",
+            description = "조회 성공",
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = {
+                            @ExampleObject(
+                                    name = "조회 성공 예시",
+                                    value = """
+                                        [{
+                                            "id": 1,
+                                            "symptomNames": ["두통", "어지러움"],
+                                            "occurredDate": "2024-11-25",
+                                            "startTime": "19:03:43",
+                                            "endTime": "20:03:43",
+                                            "base64Image": "base64_encoded_string"
+                                        }]
+                                        """
+                            )
+                    }
+            )
+    )
+    @GetMapping("/records/{kakaoId}/period")
+    public ResponseEntity<List<OccurredSymptomResponse>> getSymptomsByPeriod(
+            @PathVariable String kakaoId,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate
+    ) {
+        return ResponseEntity.ok(symptomService.getSymptomsByPeriod(kakaoId, startDate, endDate));
+    }
+
 
     @Operation(summary = "알레르기 정보 수정")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -116,6 +149,8 @@ public class SymptomController {
     ) {
         return ResponseEntity.ok(symptomService.updateSymptom(id, request));
     }
+
+
 
     @Operation(summary = "알레르기 정보 삭제")
     @DeleteMapping("/records/{kakaoId}/{id}")

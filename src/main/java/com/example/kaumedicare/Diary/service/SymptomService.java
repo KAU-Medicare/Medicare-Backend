@@ -82,6 +82,18 @@ public class SymptomService {
         );
     }
 
+    public List<OccurredSymptomResponse> getSymptomsByPeriod(String kakaoId, LocalDate startDate, LocalDate endDate) {
+        if (endDate.isBefore(startDate)) {
+            throw new IllegalArgumentException("종료 날짜가 시작 날짜보다 빠를 수 없습니다.");
+        }
+
+        return occurredSymptomRepository
+                .findByDiaryUserKakaoIdAndDiaryDateBetween(kakaoId, startDate, endDate)
+                .stream()
+                .map(OccurredSymptomResponse::from)
+                .collect(Collectors.toList());
+    }
+
     public List<OccurredSymptomResponse> getSymptomsByDate(String kakaoId, LocalDate date) {
         return occurredSymptomRepository
                 .findByDiaryUserKakaoIdAndDiaryDate(kakaoId, date)

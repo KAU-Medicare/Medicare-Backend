@@ -12,4 +12,10 @@ public interface OccurredSymptomRepository extends JpaRepository<OccurredSymptom
     List<OccurredSymptom> findByDiaryUserKakaoIdAndDiaryDate(String kakaoId, LocalDate date);
 
     long countByDiaryId(Long diaryId);
+
+    List<OccurredSymptom> findByDiaryUserKakaoIdAndDiaryDateBetween(
+            String kakaoId,
+            LocalDate startDate,
+            LocalDate endDate
+    );
 }
