@@ -1,6 +1,7 @@
 package com.example.kaumedicare.AllergyInference.controller;
 
 import com.example.kaumedicare.AllergyInference.service.AllergyInferenceService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +12,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/allergy")
+@Tag(name = "Allergy-Inference-API", description = "알레르기 추론 API")
 public class AllergyInferenceController {
     private final AllergyInferenceService allergyInferenceService;
 
@@ -36,11 +38,11 @@ public class AllergyInferenceController {
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/{analysisId}")
+    @DeleteMapping
     public ResponseEntity<Void> deleteAnalysis(
             @RequestParam String kakaoId,
-            @PathVariable Long analysisId) {
-        allergyInferenceService.deleteAnalysis(kakaoId, analysisId);
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate occurredDate) {
+        allergyInferenceService.deleteAnalysis(kakaoId, occurredDate);
         return ResponseEntity.noContent().build();
     }
 }
