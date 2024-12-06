@@ -47,7 +47,7 @@ public class InventoryResponse {
                 .build();
     }
 
-    private static String getItemNameSafely(Inventory inventory) {
+    public static String getItemNameSafely(Inventory inventory) {
         if (inventory.getType() == MedicineType.MEDICINE) {
             return inventory.getMedicine() != null ?
                     inventory.getMedicine().getItemName() : "Unknown Medicine";
