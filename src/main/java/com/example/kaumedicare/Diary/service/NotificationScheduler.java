@@ -16,15 +16,12 @@ import nl.martijndwars.webpush.Subscription;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.example.kaumedicare.Diary.dto.InventoryResponse.getItemNameSafely;
+
 
 @Component
 @RequiredArgsConstructor
@@ -34,18 +31,37 @@ public class NotificationScheduler {
     private final InventoryRepository inventoryRepository;
     private final PushSubscriptionRepository subscriptionRepository;
 
-    @Scheduled(cron = "0 * * * * *") // 매분 실행
+    @Scheduled(cron = "0 * * * * *")
     public void checkAndSendNotifications() {
-        log.info("Checking notifications at: {}", LocalDateTime.now());
-        LocalTime now = LocalTime.now();
-        LocalDate today = LocalDate.now();
+        ZoneId zoneId = ZoneId.of("Asia/Seoul");
+        LocalTime now = LocalTime.now(zoneId).withSecond(0).withNano(0);  // 초와 나노초를 0으로 설정
+        LocalDate today = LocalDate.now(zoneId);
         DayOfWeek currentDay = today.getDayOfWeek();
 
-        // useNotification이 true인 약들 중에서 현재 시간에 알림이 필요한 것들 조회
+        log.info("Checking notifications - Current Time: {}, Day: {}", now, currentDay);
+
+        // 현재 DB에 있는 모든 알림 설정된 약품들의 시간을 로깅
+        List<Inventory> allNotifications = inventoryRepository.findByUseNotificationTrue();
+        allNotifications.forEach(inv -> {
+            log.info("Stored notification - Time: {}, Current time: {}, Equal: {}",
+                    inv.getTakingTime(), now, inv.getTakingTime().equals(now));
+        });
+
         List<Inventory> inventoriesToNotify = inventoryRepository
                 .findByUseNotificationTrueAndTakingTimeAndTakingDaysContaining(now, currentDay);
 
         log.info("Found {} notifications to send", inventoriesToNotify.size());
+
+        // 상세 로깅 추가
+        if (!inventoriesToNotify.isEmpty()) {
+            inventoriesToNotify.forEach(inv -> {
+                log.info("Notification details - User: {}, Medicine: {}, Time: {}, Days: {}",
+                        inv.getUser().getKakaoId(),
+                        inv.getNickname(),
+                        inv.getTakingTime(),
+                        inv.getTakingDays());
+            });
+        }
 
         for (Inventory inventory : inventoriesToNotify) {
             User user = inventory.getUser();
