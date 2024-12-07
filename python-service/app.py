@@ -364,24 +364,26 @@ def chat():
 
 @app.route('/mosaic', methods=['POST'])
 def mosaic_image():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-    if file:
-        input_path = 'AllergyImages/ex6.jpg'
-        output_path = 'AllergyImages/out.jpg'
-        file.save(input_path)
-        processed_path = process_image(input_path, output_path)
+    data = request.json
+    if 'image' not in data or not data['image']:
+        return jsonify({'error': 'No image data provided'}), 400
 
-        with open(processed_path, "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+    image_data = base64.b64decode(data['image'])
+    input_path = 'AllergyImages/input.jpg'
+    output_path = 'AllergyImages/out.jpg'
 
-        os.remove(input_path)
-        os.remove(processed_path)
+    with open(input_path, 'wb') as f:
+        f.write(image_data)
 
-        return jsonify({'processed_image': encoded_string})
+    processed_path = process_image(input_path, output_path)
+
+    with open(processed_path, "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+
+    os.remove(input_path)
+    os.remove(processed_path)
+
+    return jsonify({'processed_image': encoded_string})
 
 @app.route('/analyze_allergy', methods=['POST'])
 def analyze_allergy_route():
