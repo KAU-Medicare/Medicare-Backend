@@ -39,7 +39,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     List<Inventory> findByUseNotificationTrue();
 
     @Query("SELECT i FROM Inventory i WHERE i.useNotification = true " +
-            "AND FUNCTION('TIME_FORMAT', i.takingTime, '%H:%i') = FUNCTION('TIME_FORMAT', :time, '%H:%i') " +
+            "AND TO_CHAR(i.takingTime, 'HH24:MI') = TO_CHAR(:time, 'HH24:MI') " +
             "AND :dayOfWeek MEMBER OF i.takingDays")
     List<Inventory> findByUseNotificationTrueAndTakingTimeAndTakingDaysContaining(
             LocalTime time, DayOfWeek dayOfWeek);
