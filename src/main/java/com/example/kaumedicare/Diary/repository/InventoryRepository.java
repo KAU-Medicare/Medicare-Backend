@@ -39,15 +39,12 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     List<Inventory> findByUseNotificationTrue();
 
-    @Query(nativeQuery = true, value =
-            "SELECT * FROM inventories i " +
-                    "WHERE i.use_notification = 1 " +
-                    "AND i.taking_time = ?1 " +  // 직접 문자열 비교로 변경
-                    "AND EXISTS (SELECT 1 FROM taking_days td " +
-                    "           WHERE td.inventory_id = i.id " +
-                    "           AND td.day_of_week = ?2)")
+    @Query("SELECT i FROM Inventory i " +
+            "WHERE i.useNotification = true " +
+            "AND i.takingTime = :time " +
+            "AND :dayOfWeek MEMBER OF i.takingDays")
     @EntityGraph(attributePaths = {"user", "medicine", "healthFood"})
     List<Inventory> findByUseNotificationTrueAndTakingTimeAndTakingDaysContaining(
-            String time,  // LocalTime 대신 String으로 변경
-            DayOfWeek dayOfWeek);
+            @Param("time") String time,
+            @Param("dayOfWeek") DayOfWeek dayOfWeek);
 }

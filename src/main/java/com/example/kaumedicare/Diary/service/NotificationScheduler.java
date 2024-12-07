@@ -98,6 +98,7 @@ public class NotificationScheduler {
         }
     }
 
+
     private String createNotificationPayload(Inventory inventory) throws JsonProcessingException {
         String itemName = inventory.getNickname();
         if (itemName == null) {
