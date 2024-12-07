@@ -36,23 +36,25 @@ public class NotificationScheduler {
     public void checkAndSendNotifications() {
         ZoneId zoneId = ZoneId.of("Asia/Seoul");
         LocalTime now = LocalTime.now(zoneId).withSecond(0).withNano(0);
+        String currentTime = now.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
         LocalDate today = LocalDate.now(zoneId);
         DayOfWeek currentDay = today.getDayOfWeek();
 
         log.info("Checking notifications - Current Time: {}, Day: {}",
-                now.format(DateTimeFormatter.ofPattern("HH:mm")), currentDay);
+                currentTime, currentDay);
 
         List<Inventory> allNotifications = inventoryRepository.findByUseNotificationTrue();
         allNotifications.forEach(inv -> {
             log.info("Stored notification - Time: {}, Current time: {}, Equal: {}",
-                    inv.getTakingTime().format(DateTimeFormatter.ofPattern("HH:mm")),
-                    now.format(DateTimeFormatter.ofPattern("HH:mm")),
-                    inv.getTakingTime().format(DateTimeFormatter.ofPattern("HH:mm"))
-                            .equals(now.format(DateTimeFormatter.ofPattern("HH:mm"))));
+                    inv.getTakingTime(),
+                    currentTime,
+                    inv.getTakingTime().equals(currentTime));
         });
 
         List<Inventory> inventoriesToNotify = inventoryRepository
-                .findByUseNotificationTrueAndTakingTimeAndTakingDaysContaining(now, currentDay);
+                .findByUseNotificationTrueAndTakingTimeAndTakingDaysContaining(
+                        currentTime,
+                        currentDay);
 
         log.info("Found {} notifications to send", inventoriesToNotify.size());
 
@@ -64,7 +66,7 @@ public class NotificationScheduler {
                                 (inv.getType() == MedicineType.MEDICINE ?
                                         inv.getMedicine().getItemName() :
                                         inv.getHealthFood().getProduct()),
-                        inv.getTakingTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                        inv.getTakingTime(),
                         inv.getTakingDays());
             });
         }
