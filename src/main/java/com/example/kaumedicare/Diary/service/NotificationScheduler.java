@@ -32,30 +32,29 @@ public class NotificationScheduler {
     private final InventoryRepository inventoryRepository;
     private final PushSubscriptionRepository subscriptionRepository;
 
+
     @Scheduled(cron = "0 * * * * *")
     public void checkAndSendNotifications() {
         ZoneId zoneId = ZoneId.of("Asia/Seoul");
-        LocalTime now = LocalTime.now(zoneId).withSecond(0).withNano(0);
-        String currentTime = now.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+        LocalTime now = LocalTime.now(zoneId).withSecond(0).withNano(0);  // LocalTime 사용
         LocalDate today = LocalDate.now(zoneId);
         DayOfWeek currentDay = today.getDayOfWeek();
 
         log.info("Checking notifications - Current Time: {}, Day: {}",
-                currentTime, currentDay);
+                now.format(DateTimeFormatter.ofPattern("HH:mm:ss")), currentDay);
 
         List<Inventory> allNotifications = inventoryRepository.findByUseNotificationTrue();
         allNotifications.forEach(inv -> {
             log.info("Stored notification - Time: {}, Current time: {}, Equal: {}",
                     inv.getTakingTime(),
-                    currentTime,
-                    inv.getTakingTime().equals(currentTime));
+                    now.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
+                    inv.getTakingTime().equals(now.format(DateTimeFormatter.ofPattern("HH:mm:ss"))));
         });
 
         List<Inventory> inventoriesToNotify = inventoryRepository
                 .findByUseNotificationTrueAndTakingTimeAndTakingDaysContaining(
-                        currentTime,
+                        now,  // LocalTime 타입으로 전달
                         currentDay);
-
         log.info("Found {} notifications to send", inventoriesToNotify.size());
 
         if (!inventoriesToNotify.isEmpty()) {

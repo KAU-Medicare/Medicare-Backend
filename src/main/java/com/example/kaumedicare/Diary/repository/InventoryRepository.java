@@ -43,8 +43,8 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
             "WHERE i.useNotification = true " +
             "AND i.takingTime = :time " +
             "AND :dayOfWeek MEMBER OF i.takingDays")
-    @EntityGraph(attributePaths = {"user", "medicine", "healthFood"})
+    @EntityGraph(attributePaths = {"user", "medicine", "healthFood", "takingDays"})
     List<Inventory> findByUseNotificationTrueAndTakingTimeAndTakingDaysContaining(
-            @Param("time") String time,
+            @Param("time") LocalTime time,
             @Param("dayOfWeek") DayOfWeek dayOfWeek);
 }
