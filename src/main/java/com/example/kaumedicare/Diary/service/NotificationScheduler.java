@@ -17,6 +17,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,17 +35,20 @@ public class NotificationScheduler {
     @Scheduled(cron = "0 * * * * *")
     public void checkAndSendNotifications() {
         ZoneId zoneId = ZoneId.of("Asia/Seoul");
-        LocalTime now = LocalTime.now(zoneId).withSecond(0).withNano(0);  // 초와 나노초를 0으로 설정
+        LocalTime now = LocalTime.now(zoneId).withSecond(0).withNano(0);
         LocalDate today = LocalDate.now(zoneId);
         DayOfWeek currentDay = today.getDayOfWeek();
 
-        log.info("Checking notifications - Current Time: {}, Day: {}", now, currentDay);
+        log.info("Checking notifications - Current Time: {}, Day: {}",
+                now.format(DateTimeFormatter.ofPattern("HH:mm")), currentDay);
 
-        // 현재 DB에 있는 모든 알림 설정된 약품들의 시간을 로깅
         List<Inventory> allNotifications = inventoryRepository.findByUseNotificationTrue();
         allNotifications.forEach(inv -> {
             log.info("Stored notification - Time: {}, Current time: {}, Equal: {}",
-                    inv.getTakingTime(), now, inv.getTakingTime().equals(now));
+                    inv.getTakingTime().format(DateTimeFormatter.ofPattern("HH:mm")),
+                    now.format(DateTimeFormatter.ofPattern("HH:mm")),
+                    inv.getTakingTime().format(DateTimeFormatter.ofPattern("HH:mm"))
+                            .equals(now.format(DateTimeFormatter.ofPattern("HH:mm"))));
         });
 
         List<Inventory> inventoriesToNotify = inventoryRepository
@@ -52,13 +56,15 @@ public class NotificationScheduler {
 
         log.info("Found {} notifications to send", inventoriesToNotify.size());
 
-        // 상세 로깅 추가
         if (!inventoriesToNotify.isEmpty()) {
             inventoriesToNotify.forEach(inv -> {
                 log.info("Notification details - User: {}, Medicine: {}, Time: {}, Days: {}",
                         inv.getUser().getKakaoId(),
-                        inv.getNickname(),
-                        inv.getTakingTime(),
+                        inv.getNickname() != null ? inv.getNickname() :
+                                (inv.getType() == MedicineType.MEDICINE ?
+                                        inv.getMedicine().getItemName() :
+                                        inv.getHealthFood().getProduct()),
+                        inv.getTakingTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                         inv.getTakingDays());
             });
         }
@@ -78,7 +84,11 @@ public class NotificationScheduler {
 
                     pushService.send(new Notification(sub, payload));
                     log.info("Notification sent for user: {}, medicine: {}",
-                            user.getKakaoId(), inventory.getNickname());
+                            user.getKakaoId(),
+                            inventory.getNickname() != null ? inventory.getNickname() :
+                                    (inventory.getType() == MedicineType.MEDICINE ?
+                                            inventory.getMedicine().getItemName() :
+                                            inventory.getHealthFood().getProduct()));
                 } catch (Exception e) {
                     log.error("Failed to send notification", e);
                 }
