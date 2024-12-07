@@ -1,5 +1,6 @@
 package com.example.kaumedicare.Diary.service;
 
+import com.example.kaumedicare.Diary.dto.MedicineType;
 import com.example.kaumedicare.Diary.model.Inventory;
 import com.example.kaumedicare.Diary.model.PushSubscription;
 import com.example.kaumedicare.Diary.repository.InventoryRepository;
@@ -24,9 +25,9 @@ import java.util.Map;
 
 import static com.example.kaumedicare.Diary.dto.InventoryResponse.getItemNameSafely;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class NotificationScheduler {
     private final PushService pushService;
     private final InventoryRepository inventoryRepository;
@@ -38,13 +39,13 @@ public class NotificationScheduler {
         LocalDate today = LocalDate.now();
         DayOfWeek currentDay = today.getDayOfWeek();
 
+        // useNotification이 true인 약들 중에서 현재 시간에 알림이 필요한 것들 조회
         List<Inventory> inventoriesToNotify = inventoryRepository
                 .findByUseNotificationTrueAndTakingTimeAndTakingDaysContaining(now, currentDay);
 
         for (Inventory inventory : inventoriesToNotify) {
             User user = inventory.getUser();
-            List<PushSubscription> subscriptions = subscriptionRepository
-                    .findByUser(user);
+            List<PushSubscription> subscriptions = subscriptionRepository.findByUser(user);
 
             for (PushSubscription subscription : subscriptions) {
                 try {
@@ -56,6 +57,8 @@ public class NotificationScheduler {
                     );
 
                     pushService.send(new Notification(sub, payload));
+                    log.info("Notification sent for user: {}, medicine: {}",
+                            user.getKakaoId(), inventory.getNickname());
                 } catch (Exception e) {
                     log.error("Failed to send notification", e);
                 }
@@ -64,11 +67,16 @@ public class NotificationScheduler {
     }
 
     private String createNotificationPayload(Inventory inventory) throws JsonProcessingException {
+        String itemName = inventory.getNickname();
+        if (itemName == null) {
+            itemName = inventory.getType() == MedicineType.MEDICINE ?
+                    inventory.getMedicine().getItemName() :
+                    inventory.getHealthFood().getProduct();
+        }
+
         Map<String, String> payload = new HashMap<>();
-        payload.put("title", "복약 알림");
-        payload.put("body", String.format("%s 복용 시간입니다.",
-                inventory.getNickname() != null ? inventory.getNickname() : getItemNameSafely(inventory)));
-        payload.put("icon", "/icons/medicine-icon.png");
+        payload.put("title", inventory.getType() == MedicineType.MEDICINE ? "복약 알림" : "영양제 알림");
+        payload.put("body", String.format("%s 복용 시간입니다.", itemName));
 
         return new ObjectMapper().writeValueAsString(payload);
     }
