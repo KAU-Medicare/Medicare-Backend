@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +36,7 @@ public class NotificationScheduler {
 
     @Scheduled(cron = "0 * * * * *") // 매분 실행
     public void checkAndSendNotifications() {
+        log.info("Checking notifications at: {}", LocalDateTime.now());
         LocalTime now = LocalTime.now();
         LocalDate today = LocalDate.now();
         DayOfWeek currentDay = today.getDayOfWeek();
@@ -42,6 +44,8 @@ public class NotificationScheduler {
         // useNotification이 true인 약들 중에서 현재 시간에 알림이 필요한 것들 조회
         List<Inventory> inventoriesToNotify = inventoryRepository
                 .findByUseNotificationTrueAndTakingTimeAndTakingDaysContaining(now, currentDay);
+
+        log.info("Found {} notifications to send", inventoriesToNotify.size());
 
         for (Inventory inventory : inventoriesToNotify) {
             User user = inventory.getUser();
