@@ -2,6 +2,7 @@ package com.example.kaumedicare.Diary.repository;
 
 import com.example.kaumedicare.Diary.dto.MedicineType;
 import com.example.kaumedicare.Diary.model.Inventory;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -38,9 +39,13 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     List<Inventory> findByUseNotificationTrue();
 
-    @Query("SELECT i FROM Inventory i WHERE i.useNotification = true " +
-            "AND TO_CHAR(i.takingTime, 'HH24:MI') = TO_CHAR(:time, 'HH24:MI') " +
-            "AND :dayOfWeek MEMBER OF i.takingDays")
+    @Query(nativeQuery = true, value =
+            "SELECT * FROM inventories i " +
+                    "WHERE i.use_notification = 1 " +
+                    "AND to_char(i.taking_time, 'HH24:MI') = to_char(?1, 'HH24:MI') " +
+                    "AND EXISTS (SELECT 1 FROM taking_days td " +
+                    "           WHERE td.inventory_id = i.id " +
+                    "           AND td.day_of_week = ?2)")
     List<Inventory> findByUseNotificationTrueAndTakingTimeAndTakingDaysContaining(
             LocalTime time, DayOfWeek dayOfWeek);
 }
