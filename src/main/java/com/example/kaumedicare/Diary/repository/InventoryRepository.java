@@ -36,8 +36,11 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
             @Param("startDate") LocalDate startDate
     );
 
-    @Query("SELECT i FROM Inventory i WHERE i.useNotification = true AND i.takingTime = :time AND :dayOfWeek MEMBER OF i.takingDays")
+    List<Inventory> findByUseNotificationTrue();
+
+    @Query("SELECT i FROM Inventory i WHERE i.useNotification = true " +
+            "AND FUNCTION('TIME_FORMAT', i.takingTime, '%H:%i') = FUNCTION('TIME_FORMAT', :time, '%H:%i') " +
+            "AND :dayOfWeek MEMBER OF i.takingDays")
     List<Inventory> findByUseNotificationTrueAndTakingTimeAndTakingDaysContaining(
             LocalTime time, DayOfWeek dayOfWeek);
-
 }
